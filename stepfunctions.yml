@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "StepFunctions create"
+Resources:
+  StepFunctionsStateMachine:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+          StateMachineName: "recovery_jobnet"
+          DefinitionString: !Sub |
+              {
+                "Comment": "",
+                "StartAt": "recevery",
+                "States": {
+                  "recevery": {
+                    "Comment": "リカバリー機能",
+                    "Type": "Task",
+                    "InputPath": "$",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:recovery:DEV",
+                    "End": true
+                  }
+                }
+              }
+          RoleArn: !GetAtt 
+          - IAMRoleForStepFunctions
+          - Arn
+          StateMachineType: "STANDARD"
+          LoggingConfiguration: 
+              IncludeExecutionData: false
+              Level: "OFF"
+# ------------------------------------------------------------#
+# StepFunctionsRole create
+# ------------------------------------------------------------#
+  IAMRoleForStepFunctions:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess'
+      MaxSessionDuration: 3600
+      Path: "/"
+      RoleName: "stepFunctionsRole"

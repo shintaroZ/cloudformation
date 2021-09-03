@@ -1,0 +1,511 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "APIGateway Create"
+Resources:
+  ApiGatewayRestApi:
+      Type: "AWS::ApiGateway::RestApi"
+      Properties:
+          Name: "eg_iot_api"
+          Description: "eG-Iot-API"
+          ApiKeySourceType: "HEADER"
+          EndpointConfiguration: 
+              Types: 
+                - "REGIONAL"
+
+  ApiGatewayResourceDataCollection:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "datacollection"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+
+  ApiGatewayResourceMailSend:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "mailsend"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+
+  RequestValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties: 
+          Name: "ValidateBodyParameters"
+          RestApiId: !Ref ApiGatewayRestApi
+          ValidateRequestBody: true
+          ValidateRequestParameters: true
+
+  ApiGatewayMethod:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceDataCollection
+          HttpMethod: "DELETE"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestValidatorId: !Ref RequestValidator
+          RequestParameters: 
+              "method.request.header.idToken": true
+              "method.request.querystring.clientName": true
+              "method.request.querystring.deviceId": true
+              "method.request.querystring.sensorId": true
+          RequestModels: 
+              "application/json": "Empty"
+          MethodResponses: 
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "204"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "400"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  SelectionPattern: ""
+                  StatusCode: "204"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  SelectionPattern: "Missing required request parameters.*"
+                  StatusCode: "400"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+                  "integration.request.path.deviceId": "method.request.querystring.deviceId"
+                  "integration.request.path.sensorId": "method.request.querystring.sensorId"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          ,"deviceId" : "$input.params('deviceId')"
+                          ,"sensorId" : "$input.params('sensorId')"
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_delete:DEV/invocations"
+
+  ApiGatewayMethod2:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceDataCollection
+          HttpMethod: "GET"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestValidatorId: !Ref RequestValidator
+          RequestParameters: 
+              "method.request.header.idToken": true
+              "method.request.querystring.clientName": true
+              "method.request.querystring.deviceId": false
+              "method.request.querystring.sensorId": false
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+                  "method.response.header.Content-Type": false
+              StatusCode: "200"
+            - 
+              ResponseModels: 
+                  "application/json": "Error"
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  ResponseTemplates: 
+                      "application/json": |
+                          {
+                              "message" : $input.path('$.errorMessage')
+                          }
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+                  "integration.request.path.deviceId": "method.request.querystring.deviceId"
+                  "integration.request.path.sensorId": "method.request.querystring.sensorId"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          #if($input.params('deviceId') != "")
+                              ,"deviceId" : "$input.params('deviceId')"
+                          #end
+                          #if($input.params('sensorId') != "")
+                              ,"sensorId" : "$input.params('sensorId')"
+                          #end
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_get:DEV/invocations"
+
+
+  ApiGatewayMethod3:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceDataCollection
+          HttpMethod: "OPTIONS"
+          AuthorizationType: "NONE"
+          ApiKeyRequired: false
+          RequestParameters: {}
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Headers": false
+                  "method.response.header.Access-Control-Allow-Methods": false
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "200"
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Headers": false
+                  "method.response.header.Access-Control-Allow-Methods": false
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "204"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,idToken'"
+                      "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,OPTIONS,POST'"
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestTemplates: 
+                  "application/json": "{\"statusCode\": 200}"
+              TimeoutInMillis: 29000
+              Type: "MOCK"
+
+  ApiGatewayMethod4:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceDataCollection
+          HttpMethod: "POST"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestValidatorId: !Ref RequestValidator
+          RequestParameters: 
+              "method.request.header.idToken": true
+              "method.request.querystring.clientName": true
+              "method.request.querystring.deviceId": true
+              "method.request.querystring.sensorId": true
+          RequestModels: 
+              "application/json": "Empty"
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "200"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "400"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "Missing required request parameters.*|The parameters is.*"
+                  StatusCode: "400"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+                  "integration.request.path.deviceId": "method.request.querystring.deviceId"
+                  "integration.request.path.sensorId": "method.request.querystring.sensorId"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          ,"deviceId" : "$input.params('deviceId')"
+                          ,"sensorId" : "$input.params('sensorId')"
+                          ,"bodyRequest" : $input.json('$')
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+                      
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_upsert:DEV/invocations"
+
+  ApiGatewayMethod5:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceMailSend
+          HttpMethod: "DELETE"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestValidatorId: !Ref RequestValidator
+          RequestParameters: 
+              "method.request.header.idToken": true
+              "method.request.querystring.clientName": true
+              "method.request.querystring.mailSendId": true
+          MethodResponses: 
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "204"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+                  "method.response.header.Content-Type": false
+              StatusCode: "400"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+                  "method.response.header.Content-Type": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  StatusCode: "204"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "Missing required request parameters.*"
+                  StatusCode: "400"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+                  "integration.request.path.mailSendId": "method.request.querystring.mailSendId"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          ,"mailSendId" : $input.params('mailSendId')
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_delete:DEV/invocations"
+
+  ApiGatewayMethod6:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceMailSend
+          HttpMethod: "GET"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestValidatorId: !Ref RequestValidator
+          RequestParameters: 
+              "method.request.header.idToken": false
+              "method.request.querystring.clientName": true
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+                  "method.response.header.Content-Type": false
+              StatusCode: "200"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_get:DEV/invocations"
+
+  ApiGatewayMethod7:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceMailSend
+          HttpMethod: "OPTIONS"
+          AuthorizationType: "NONE"
+          ApiKeyRequired: false
+          RequestParameters: {}
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Headers": false
+                  "method.response.header.Access-Control-Allow-Methods": false
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "200"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,idToken'"
+                      "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,OPTIONS,POST'"
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestTemplates: 
+                  "application/json": "{\"statusCode\": 200}"
+              TimeoutInMillis: 29000
+              Type: "MOCK"
+
+  ApiGatewayMethod8:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          ResourceId: !Ref ApiGatewayResourceMailSend
+          HttpMethod: "POST"
+          AuthorizationType: "NONE"
+          AuthorizerId: "2mg3we"
+          ApiKeyRequired: false
+          RequestParameters: 
+              "method.request.header.idToken": true
+              "method.request.querystring.clientName": true
+              "method.request.querystring.mailSendId": true
+          MethodResponses: 
+            - 
+              ResponseModels: 
+                  "application/json": "Empty"
+              ResponseParameters: 
+                  "method.response.header.Access-Control-Allow-Origin": false
+              StatusCode: "200"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "400"
+            - 
+              ResponseParameters: 
+                  "method.response.header.Content-Type": false
+              StatusCode: "500"
+          Integration: 
+              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              ContentHandling: "CONVERT_TO_TEXT"
+              IntegrationHttpMethod: "POST"
+              IntegrationResponses: 
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Access-Control-Allow-Origin": "'*'"
+                  ResponseTemplates: {}
+                  StatusCode: "200"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "Missing required request parameters.*"
+                  StatusCode: "400"
+                - 
+                  ResponseParameters: 
+                      "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+                  SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+                  StatusCode: "500"
+              PassthroughBehavior: "WHEN_NO_MATCH"
+              RequestParameters: 
+                  "integration.request.header.idToken": "method.request.header.idToken"
+                  "integration.request.path.clientName": "method.request.querystring.clientName"
+                  "integration.request.path.mailSendId": "method.request.querystring.mailSendId"
+              RequestTemplates: 
+                  "application/json": |
+                      {
+                          "clientName" : "$input.params('clientName')"
+                          ,"mailSendId" : $input.params('mailSendId')
+                          ,"bodyRequest" : $input.json('$')
+                          ,"idToken" : "$input.params('idToken')"
+                      }
+                      
+              TimeoutInMillis: 29000
+              Type: "AWS"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_upsert:DEV/invocations"
+

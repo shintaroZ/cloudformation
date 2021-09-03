@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Lambda create. [code update is need]"
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  securityGroupId:
+    Type: 'AWS::EC2::SecurityGroup::Id'
+    Description : "select securityGroupId for rds-sg"
+  subnetIda:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select private-lambda-subnet-a"
+  subnetIdc:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select private-lambda-subnet-c"
+Resources:
+# ------------------------------------------------------------#
+# 公開DB作成機能
+# ------------------------------------------------------------# 
+  LambdaLatestOrder:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "公開DB作成機能"
+      FunctionName: "latest_order"
+      Handler: index.handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        ZipFile: !Join 
+          - |+
+          - - from __future__ import print_function
+            - import json
+            - import cfnresponse
+            - print('Loading function')
+            - 'def handler(event, context):'
+            - '   return'
+      Timeout: 180
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Sub "${securityGroupId}"
+# ------------------------------------------------------------#
+# データメンテナンス機能
+# ------------------------------------------------------------# 
+  LambdaLatestOrder:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "データメンテナンス機能"
+      FunctionName: "dataMaintenance"
+      Handler: index.handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        ZipFile: !Join 
+          - |+
+          - - from __future__ import print_function
+            - import json
+            - import cfnresponse
+            - print('Loading function')
+            - 'def handler(event, context):'
+            - '   return'
+      Timeout: 180
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Sub "${securityGroupId}"
+# ------------------------------------------------------------#
+# lambdaRole create
+# ------------------------------------------------------------# 
+  IAMRoleForLambda:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+        - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonAthenaFullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonSESFullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonVPCFullAccess'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      MaxSessionDuration: 3600
+      Path: "/"
+      RoleName: "lambdaRole"

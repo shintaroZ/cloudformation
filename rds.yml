@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  RDS for  MySQL Create
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Client Name Prefix"
+        Parameters:
+          - ClientPrefix
+      - Label:
+          default: "RDS Configuration"
+        Parameters:
+          - DBInstanceName
+          - MySQLMajorVersion
+          - MySQLMinorVersion
+          - DBInstanceClass
+          - DBInstanceStorageSize
+          - DBInstanceStorageType
+          - DBName
+          - DBMasterUserName
+          - DBPassword
+          - MultiAZ
+    ParameterLabels:
+      DBInstanceName:
+        default: "DBInstanceName"
+      MySQLMajorVersion:
+        default: "MySQLMajorVersion"
+      MySQLMinorVersion:
+        default: "MySQLMinorVersion"
+      DBInstanceClass:
+        default: "DBInstanceClass"
+      DBInstanceStorageSize:
+        default: "DBInstanceStorageSize"
+      DBInstanceStorageType:
+        default: "DBInstanceStorageType"
+      DBName:
+        default: "DBName"
+      DBMasterUserName:
+        default: "DBUserName"
+      DBPassword:
+        default: "DBPassword"
+      MultiAZ:
+        default: "MultiAZ"
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  ClientPrefix:
+    Type: String
+    Default: "budonoki"
+
+  DBInstanceName:
+    Type: String
+    Default: "rds"
+  MySQLMajorVersion:
+    Type: String
+    Default: "5.7"
+    AllowedValues: [ "5.5", "5.6", "5.7" ]
+  MySQLMinorVersion:
+    Type: String
+    Default: "31"
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    AllowedValues:
+      - db.t1.micro
+      - db.m1.small
+      - db.m1.medium
+      - db.m1.large
+      - db.m1.xlarge
+      - db.m2.xlarge
+      - db.m2.2xlarge
+      - db.m2.4xlarge
+      - db.m3.medium
+      - db.m3.large
+      - db.m3.xlarge
+      - db.m3.2xlarge
+      - db.m4.large
+      - db.m4.xlarge
+      - db.m4.2xlarge
+      - db.m4.4xlarge
+      - db.m4.10xlarge
+      - db.r3.large
+      - db.r3.xlarge
+      - db.r3.2xlarge
+      - db.r3.4xlarge
+      - db.r3.8xlarge
+      - db.m2.xlarge
+      - db.m2.2xlarge
+      - db.m2.4xlarge
+      - db.cr1.8xlarge
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+      - db.t3.micro
+
+  DBInstanceStorageSize:
+    Type: String
+    Default: "20"
+  DBInstanceStorageType:
+    Type: String
+    Default: "gp2"
+  DBName:
+    Type: String
+    Default: "ins001"
+  DBMasterUserName:
+    Type: String
+    Default: "dbuser"
+#    NoEcho: true
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: "must begin with a letter and contain only alphanumeric characters."
+  DBPassword: 
+    Default: "dbpassword"
+    NoEcho: true
+    Type: String
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: "must contain only alphanumeric characters."
+  MultiAZ: 
+    Default: "false"
+    Type: String
+    AllowedValues: [ "true", "false" ]
+    
+  vpcId:
+    Type: 'AWS::EC2::VPC::Id'
+  subnetIda:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select public-subnet-a"
+  subnetIdc:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select public-subnet-c"
+  ec2SecurityGroupId:
+    Type: String
+    Default: "sg-"
+    Description : "input eC2SecurityGroupId for ec2 output"
+Resources: 
+# ------------------------------------------------------------#
+#  DBInstance MySQL
+# ------------------------------------------------------------#
+  DBInstance: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBInstanceIdentifier: !Sub "${ClientPrefix}-${DBInstanceName}"
+      Engine: MySQL
+      EngineVersion: !Sub "${MySQLMajorVersion}.${MySQLMinorVersion}"
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBInstanceStorageSize
+      StorageType: !Ref DBInstanceStorageType
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBMasterUserName
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: true
+      MultiAZ: !Ref MultiAZ
+      PreferredBackupWindow: "18:00-18:30"
+      PreferredMaintenanceWindow: "sat:19:00-sat:19:30"
+      AutoMinorVersionUpgrade: false
+      DBParameterGroupName: !Ref DBParameterGroup  
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      CopyTagsToSnapshot: true
+      BackupRetentionPeriod: 7
+      Tags: 
+        - Key: "Name"
+          Value: !Ref DBInstanceName
+    DeletionPolicy: "Delete"
+
+# ------------------------------------------------------------#
+#  DBParameterGroup
+# ------------------------------------------------------------#
+  DBParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Family: !Sub "MySQL${MySQLMajorVersion}"
+      Description: !Sub "${ClientPrefix}-${DBInstanceName}-parm"
+      Parameters:
+        time_zone : "Asia/Tokyo"
+        character_set_client : "utf8"
+        character_set_connection : "utf8"
+        character_set_database : "utf8"
+        character_set_results : "utf8"
+        character_set_server : "utf8"
+        skip-character-set-client-handshake : "1"
+
+# ------------------------------------------------------------#
+#  SecurityGroup for RDS (MySQL)
+# ------------------------------------------------------------#
+  RDSSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId:  !Sub "${vpcId}"
+      GroupName: !Sub "${ClientPrefix}-${DBInstanceName}-sg"
+      GroupDescription: "-"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ClientPrefix}-${DBInstanceName}-sg"
+# Rule
+      SecurityGroupIngress: 
+        - 
+          CidrIp: "18.176.203.96/28"
+          Description: "Tableau Online"
+          FromPort: 3306
+          IpProtocol: "tcp"
+          ToPort: 3306
+        - 
+          SourceSecurityGroupId: !Ref RDSProxySecurityGroup
+          SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+          Description: "rdsproxy source"
+          FromPort: 3306
+          IpProtocol: "tcp"
+          ToPort: 3306
+        - 
+          SourceSecurityGroupId: !Sub "${ec2SecurityGroupId}"
+          SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+          FromPort: 3306
+          IpProtocol: "tcp"
+          ToPort: 3306
+      SecurityGroupEgress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
+  RDSProxySecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: !Sub "${vpcId}"
+      GroupName: !Sub "${ClientPrefix}-${DBInstanceName}-proxy-sg"
+      GroupDescription: "-"
+      SecurityGroupIngress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          Description: "rdsproxy"
+          FromPort: 3306
+          IpProtocol: "tcp"
+          ToPort: 3306
+      SecurityGroupEgress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
+# ------------------------------------------------------------#
+#  DBSubnetGroup
+# ------------------------------------------------------------#
+  DBSubnetGroup: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupName: !Sub "${ClientPrefix}-${DBInstanceName}-subnet"
+      DBSubnetGroupDescription: "-"
+      SubnetIds: 
+        - !Sub "${subnetIda}"
+        - !Sub "${subnetIdc}"
+
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+#DBInstance
+  DBInstanceID:
+    Value: !Ref DBInstance
+    Export:
+      Name: !Sub "${ClientPrefix}-${DBInstanceName}-id"
+
+  DBInstanceEndpoint:
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${ClientPrefix}-${DBInstanceName}-endpoint"
+
+  DBName:
+    Value: !Ref DBName
+    Export:
+      Name: !Sub "${ClientPrefix}-${DBInstanceName}-dbname"
