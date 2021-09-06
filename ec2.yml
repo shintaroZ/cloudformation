@@ -117,10 +117,6 @@ Resources:
 # Rule
       SecurityGroupIngress: 
         - 
-          CidrIp: "18.176.203.96/28"
-          Description: "TLS for tableau asia ip"
-          IpProtocol: "-1"
-        - 
           CidrIp: "0.0.0.0/0"
           FromPort: 22
           IpProtocol: "tcp"

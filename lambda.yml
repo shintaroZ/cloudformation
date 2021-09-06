@@ -47,7 +47,7 @@ Resources:
 # ------------------------------------------------------------#
 # データメンテナンス機能
 # ------------------------------------------------------------# 
-  LambdaLatestOrder:
+  LambdaDataMaintenance:
     Type: 'AWS::Lambda::Function'
     Properties:
       Description: "データメンテナンス機能"
@@ -91,6 +91,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
         - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
         - 'arn:aws:iam::aws:policy/AmazonAthenaFullAccess'

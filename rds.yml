@@ -219,6 +219,7 @@ Resources:
         - 
           SourceSecurityGroupId: !Sub "${ec2SecurityGroupId}"
           SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+          Description: "ec2 source"
           FromPort: 3306
           IpProtocol: "tcp"
           ToPort: 3306
@@ -233,6 +234,9 @@ Resources:
       VpcId: !Sub "${vpcId}"
       GroupName: !Sub "${ClientPrefix}-${DBInstanceName}-proxy-sg"
       GroupDescription: "-"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ClientPrefix}-${DBInstanceName}-proxy-sg"
       SecurityGroupIngress: 
         - 
           CidrIp: "0.0.0.0/0"
