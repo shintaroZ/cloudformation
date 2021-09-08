@@ -1,0 +1,203 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "create cognito user pool"
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Project Name Prefix"
+        Parameters:
+          - ProjectPrefix
+      - Label:
+          default: "Client Name"
+        Parameters:
+          - ClientGroupName
+      - Label:
+          default: "Cognito Domain Name. must be unique"
+        Parameters:
+          - DomainName
+      - Label:
+          default: "Callback URL to after login"
+        Parameters:
+          - CallbackURL
+      - Label:
+          default: "Callback URL to after logout"
+        Parameters:
+          - LogoutURL
+          
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: "eg-iot"
+  ClientGroupName:
+    Type: String
+    Default: "eg-iot-budonoki"
+  DomainName:
+    Type: String
+    Default: "egiot-hogedomain12345"
+    AllowedPattern: "^[a-z0-9](?:[a-z0-9\\-]{0,61}[a-z0-9])?$"
+  CallbackURL:
+    Type: String
+    Default: "https://master.d35bjnj2sqbpnv.amplifyapp.com/"
+  LogoutURL:
+    Type: String
+    Default: "https://google.com"
+
+Resources:
+  CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+          UserPoolName: !Sub "${ProjectPrefix}-UserPool"
+          Policies: 
+              PasswordPolicy: 
+                  MinimumLength: 8
+                  RequireUppercase: true
+                  RequireLowercase: true
+                  RequireNumbers: true
+                  RequireSymbols: false
+                  TemporaryPasswordValidityDays: 7
+          LambdaConfig: {}
+          Schema: 
+            - 
+              Name: "email"
+              AttributeDataType: "String"
+              DeveloperOnlyAttribute: false
+              Mutable: true
+              Required: false
+              StringAttributeConstraints: 
+                  MinLength: "0"
+                  MaxLength: "2048"
+          AutoVerifiedAttributes: 
+            - "email"
+          UsernameAttributes: 
+            - "email"
+          SmsVerificationMessage: " 検証コードは {####} です。"
+          EmailVerificationMessage: " 検証コードは {####} です。"
+          EmailVerificationSubject: " 検証コード"
+          SmsAuthenticationMessage: " 認証コードは {####} です。"
+          MfaConfiguration: "OFF"
+          EmailConfiguration: 
+              EmailSendingAccount: "COGNITO_DEFAULT"
+          AdminCreateUserConfig: 
+              AllowAdminCreateUserOnly: true
+              InviteMessageTemplate: 
+                  SMSMessage: " ユーザー名は {username}、仮パスワードは {####} です。"
+                  EmailMessage: " ユーザー名は {username}、仮パスワードは {####} です。"
+                  EmailSubject: " 仮パスワード"
+          UserPoolTags: {}
+          AccountRecoverySetting: 
+              RecoveryMechanisms: 
+                - 
+                  Priority: 1
+                  Name: "verified_email"
+          UsernameConfiguration: 
+              CaseSensitive: false
+          VerificationMessageTemplate: 
+              SmsMessage: " 検証コードは {####} です。"
+              EmailMessage: " 検証コードは {####} です。"
+              EmailSubject: " 検証コード"
+              DefaultEmailOption: "CONFIRM_WITH_CODE"
+
+  CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+          UserPoolId: !Ref CognitoUserPool
+          ClientName: !Sub "${ProjectPrefix}-UserPool-Client"
+          ReadAttributes: 
+            - "address"
+            - "birthdate"
+            - "email"
+            - "email_verified"
+            - "family_name"
+            - "gender"
+            - "given_name"
+            - "locale"
+            - "middle_name"
+            - "name"
+            - "nickname"
+            - "phone_number"
+            - "phone_number_verified"
+            - "picture"
+            - "preferred_username"
+            - "profile"
+            - "updated_at"
+            - "website"
+            - "zoneinfo"
+          WriteAttributes: 
+            - "address"
+            - "birthdate"
+            - "email"
+            - "family_name"
+            - "gender"
+            - "given_name"
+            - "locale"
+            - "middle_name"
+            - "name"
+            - "nickname"
+            - "phone_number"
+            - "picture"
+            - "preferred_username"
+            - "profile"
+            - "updated_at"
+            - "website"
+            - "zoneinfo"
+          ExplicitAuthFlows: 
+            - "ALLOW_CUSTOM_AUTH"
+            - "ALLOW_REFRESH_TOKEN_AUTH"
+            - "ALLOW_USER_SRP_AUTH"
+          PreventUserExistenceErrors: "ENABLED"
+          SupportedIdentityProviders: 
+            - "COGNITO"
+          CallbackURLs: 
+            - !Sub "${CallbackURL}"
+          LogoutURLs: 
+            - !Sub "${LogoutURL}"
+          AllowedOAuthFlows: 
+            - "code"
+          AllowedOAuthScopes: 
+            - "email"
+            - "openid"
+          AllowedOAuthFlowsUserPoolClient: true
+          RefreshTokenValidity: 60
+          IdTokenValidity: 60
+          AccessTokenValidity: 60
+          TokenValidityUnits: 
+              AccessToken: "minutes"
+              IdToken: "minutes"
+              RefreshToken: "minutes"
+
+  CognitoUserPoolGroup:
+      Type: "AWS::Cognito::UserPoolGroup"
+      Properties:
+          GroupName: "admin"
+          UserPoolId: !Ref CognitoUserPool
+          Precedence: 0
+
+  CognitoUserPoolGroup2:
+      Type: "AWS::Cognito::UserPoolGroup"
+      Properties:
+          GroupName: !Sub "${ClientGroupName}"
+          UserPoolId: !Ref CognitoUserPool
+          Precedence: 1
+
+  CognitoUserPoolDomain:
+      Type: "AWS::Cognito::UserPoolDomain"
+      Properties:
+          Domain: !Sub "${DomainName}"
+          UserPoolId: !Ref CognitoUserPool
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  CognitoUserPool:
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub "${ProjectPrefix}-UserPool"
+  CognitoUserPoolClient:
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub "${ProjectPrefix}-UserPool-Client"
+

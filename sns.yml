@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sns create"
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  SendMailAddress:
+    Type: String
+    Default: "s_otoi@matisse.co.jp"
+    Description : "input endpoint mailaddress"
+
+Resources:
+  SNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+          DisplayName: ""
+          TopicName: !Sub "sns-topic"
+
+  SNSTopicPolicy:
+      Type: "AWS::SNS::TopicPolicy"
+      Properties:
+          PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__default_statement_ID\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"SNS:GetTopicAttributes\",\"SNS:SetTopicAttributes\",\"SNS:AddPermission\",\"SNS:RemovePermission\",\"SNS:DeleteTopic\",\"SNS:Subscribe\",\"SNS:ListSubscriptionsByTopic\",\"SNS:Publish\",\"SNS:Receive\"],\"Resource\":\"${SNSTopic}\",\"Condition\":{\"StringEquals\":{\"AWS:SourceOwner\":\"${AWS::AccountId}\"}}}]}"
+          Topics: 
+            - !Ref SNSTopic
+
+  SNSSubscription:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+          TopicArn: !Ref SNSTopic
+          Endpoint: !Ref SendMailAddress
+          Protocol: "email"
+          Region: !Ref AWS::Region
+
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  SNSTopicARN:
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Sub "SNSTopicARN"

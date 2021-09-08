@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "amplify create"
+
+
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+  managementCodeCommitUrl:
+    Type: String
+    Default: "https://git-codecommit.ap-northeast-1.amazonaws.com/v1/repos/eg-iot_management"
+    Description : "input management code commit url"
+  topCodeCommitUrl:
+    Type: String
+    Default: "https://ap-northeast-1.console.aws.amazon.com/codesuite/codecommit/repositories/eg-iot_top/browse/refs/heads/master?region=ap-northeast-1"
+    Description : "input top code commit url"
+    
+Resources:
+
+#  AmplifyBranch:
+#      Type: "AWS::Amplify::Branch"
+#      Properties:
+#          BranchName: "master"
+#          Stage: "PRODUCTION"
+#          AppId: "d35bjnj2sqbpnv"
+#          EnablePullRequestPreview: false
+#          EnableAutoBuild: true
+#          EnablePerformanceMode: false
+
+# ------------------------------------------------------------#
+# 管理画面
+# ------------------------------------------------------------#
+  AmplifyApp:
+      Type: "AWS::Amplify::App"
+      Properties:
+          Name: "eg-iot_management"
+#          Repository: !Sub "${managementCodeCommitUrl}"
+          IAMServiceRole: !GetAtt 
+            - IAMRoleForAmplify
+            - Arn
+          EnvironmentVariables: 
+            - 
+              Name: "_LIVE_UPDATES"
+#              Value: "[{\\"pkg\\":\\"yarn\\",\\"type\\":\\"npm\\",\\"version\\":\\"latest\\"}]"
+              Value: "[{\"pkg\":\"yarn\",\"type\":\"npm\",\"version\":\"latest\"}]"
+          BasicAuthConfig: 
+              EnableBasicAuth: false
+              Username: "dataeg"
+              Password: "L3ewcF8D"
+          CustomRules: 
+            - 
+              Source: "/<*>"
+              Target: "/index.html"
+              Status: "404-200"
+            - 
+              Source: "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>"
+              Target: "/index.html"
+              Status: "200"
+          BuildSpec: |
+              version: 1
+              frontend:
+                phases:
+                  preBuild:
+                    commands:
+                      - yarn install
+                  build:
+                    commands:
+                      - yarn run build
+                artifacts:
+                  baseDirectory: build
+                  files:
+                    - '**/*'
+                cache:
+                  paths:
+                    - node_modules/**/*
+              
+          EnableBranchAutoDeletion: false
+          AccessToken: "REPLACEME"
+          OauthToken: "REPLACEME"
+          CustomHeaders: ""
+
+# ------------------------------------------------------------#
+# Top画面
+# ------------------------------------------------------------#
+  AmplifyApp2:
+      Type: "AWS::Amplify::App"
+      Properties:
+          Name: "eg-iot_top"
+#          Repository: !Sub "${topCodeCommitUrl}"
+          IAMServiceRole: !GetAtt 
+            - IAMRoleForAmplify
+            - Arn
+          CustomRules: 
+            - 
+              Source: "/<*>"
+              Target: "/index.html"
+              Status: "404-200"
+            - 
+              Source: "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>"
+              Target: "/index.html"
+              Status: "200"
+          BuildSpec: |
+              version: 1
+              frontend:
+                phases:
+                  preBuild:
+                    commands:
+                      - yarn install
+                  build:
+                    commands:
+                      - yarn run build
+                artifacts:
+                  baseDirectory: build
+                  files:
+                    - '**/*'
+                cache:
+                  paths:
+                    - node_modules/**/*
+              
+          EnableBranchAutoDeletion: false
+          AccessToken: "REPLACEME"
+          OauthToken: "REPLACEME"
+          CustomHeaders: ""
+# ------------------------------------------------------------#
+# IAMRoleForAmplify create
+# ------------------------------------------------------------#
+  IAMRoleForAmplify:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "amplify.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess-Amplify'
+#        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+      MaxSessionDuration: 3600
+      Path: "/"
+      RoleName: "amplifyRole"
+

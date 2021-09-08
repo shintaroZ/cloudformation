@@ -260,6 +260,15 @@ Resources:
       SubnetIds: 
         - !Sub "${subnetIda}"
         - !Sub "${subnetIdc}"
+# ------------------------------------------------------------#
+# SecretsManager
+# ------------------------------------------------------------# 
+  SecretsManagerSecret:
+      Type: "AWS::SecretsManager::Secret"
+      Properties:
+          Name:  !Sub "${ClientPrefix}-${DBInstanceName}-sercret"
+          Description: "-"
+          SecretString: !Sub "{\"username\":\"${DBMasterUserName}\",\"password\":\"${DBPassword}\",\"engine\":\"mysql\",\"host\":\"${DBInstance.Endpoint.Address}\",\"port\":${DBInstance.Endpoint.Port},\"dbInstanceIdentifier\":\"${DBInstanceName}\"}"
 
 # ------------------------------------------------------------#
 # Output Parameters
@@ -280,3 +289,8 @@ Outputs:
     Value: !Ref DBName
     Export:
       Name: !Sub "${ClientPrefix}-${DBInstanceName}-dbname"
+      
+  SecretsManagerARN:
+    Value: !Ref SecretsManagerSecret
+    Export:
+      Name: !Sub "${ClientPrefix}-${DBInstanceName}-SecretsManager-ARN"

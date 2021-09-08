@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "StepFunctions create"
 Resources:
+# ------------------------------------------------------------#
+# リカバリー機能
+# ------------------------------------------------------------#
   StepFunctionsStateMachine:
       Type: "AWS::StepFunctions::StateMachine"
       Properties:
@@ -14,7 +17,52 @@ Resources:
                     "Comment": "リカバリー機能",
                     "Type": "Task",
                     "InputPath": "$",
-                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:recovery:DEV",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:recovery:PRD",
+                    "End": true
+                  }
+                }
+              }
+          RoleArn: !GetAtt 
+          - IAMRoleForStepFunctions
+          - Arn
+          StateMachineType: "STANDARD"
+          LoggingConfiguration: 
+              IncludeExecutionData: false
+              Level: "OFF"
+# ------------------------------------------------------------#
+# 公開DB作成機能→閾値判定機能→メール送信機能
+# ------------------------------------------------------------#
+  StepFunctionsStateMachine2:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+          StateMachineName: "latest_jobnet"
+          DefinitionString: !Sub |
+              {
+                "Comment": "Parallel Example.",
+                "StartAt": "latestorder",
+                "States": {
+                  "latestorder": {
+                    "Comment": "公開DB作成機能",
+                    "Type": "Task",
+                    "InputPath": "$",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:latest_order:PRD",
+                    "ResultPath": "$",
+                    "Next": "limitJudge"
+                  },
+                  "limitJudge": {
+                    "Comment": "閾値判定機能",
+                    "Type": "Task",
+                    "InputPath": "$",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:limitJudge:PRD",
+                    "ResultPath": "$",
+                    "Next": "mailSender"
+                  },
+                  "mailSender": {
+                    "Comment": "メール通知機能",
+                    "Type": "Task",
+                    "InputPath": "$",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mailsender:PRD",
+                    "ResultPath": "$",
                     "End": true
                   }
                 }
@@ -39,11 +87,26 @@ Resources:
             Effect: "Allow"
             Principal:
               Service:
-                - "lambda.amazonaws.com"
+                - "states.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess'
+        - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
       MaxSessionDuration: 3600
       Path: "/"
       RoleName: "stepFunctionsRole"
+      
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  LatestStepFunctionName:
+    Value: !GetAtt StepFunctionsStateMachine2.Name
+    Export:
+      Name: !Sub "LatestStepFunctionName"
+      
+  LatestStepFunctionARN:
+    Value: !GetAtt StepFunctionsStateMachine2.Arn
+    Export:
+      Name: !Sub "LatestStepFunctionARN"

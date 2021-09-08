@@ -42,7 +42,7 @@ Metadata:
 Parameters:
   PJPrefix:
     Type: String
-    Default: "eg-Iot"
+    Default: "eg-iot"
 
 #EC2Instance
   KeyPairName:

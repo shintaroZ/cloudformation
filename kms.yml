@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  KMS Create
+
+Resources:
+# ------------------------------------------------------------#
+# KeyManagedService
+# ------------------------------------------------------------# 
+  SecretsManagerKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: "common secrets manager key"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          -
+            Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action: 'kms:*'
+            Resource: '*'
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  SecretsManagerKey:
+    Value: !GetAtt 
+      - SecretsManagerKey
+      - Arn
+    Export:
+      Name: "SecretsManagerKey-ARN"

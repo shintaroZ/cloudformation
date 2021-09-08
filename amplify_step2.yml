@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: 2010-09-09
+# 開発環境で実行すること
+Description: Step 2, CodeCommit (in Repository Account)
+Metadata: 
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Production Account"
+        Parameters: 
+          - ProductionAccountId
+          - ProductionS3BucketARN
+          - ProductionCmkArn
+      - Label: 
+          default: "Develop Account"
+        Parameters: 
+          - DevelopEgIotManagementARN
+          - DevelopEgIotTopARN
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+# 本番環境のアカウント
+  ProductionAccountId:
+    Description: Production Account ID
+    MaxLength: 12
+    MinLength: 12
+    Type: String
+    Default : "262958308103"
+# 本番環境のpipelineのs3バケット
+  ProductionS3BucketARN:
+    Description: Production Account S3 Bucket ARN for Artifact (Created by amplify_step1.yml)
+    Type: String
+    Default : "arn:aws:s3:::artifacts-ap-northeast-1-262958308103-pipeline"
+    
+# 本番環境のKMS
+  ProductionCmkArn:
+    Description: Production Account CMK ARN (Created by amplify_step1.yml)
+    Type: String
+    Default : "arn:aws:kms:ap-northeast-1:262958308103:key/bb9e6379-a910-4de2-a4ac-1a93b670d6fe"
+    
+# 開発環境の管理画面のリポジトリARN
+  DevelopEgIotManagementARN:
+    Description: Develop Account CodeCommit ARN 
+    Type: String
+    Default : "arn:aws:codecommit:ap-northeast-1:968506721144:eg-iot_management"
+    
+# 開発環境のTop画面のリポジトリARN
+  DevelopEgIotTopARN:
+    Description: Develop Account CodeCommit ARN 
+    Type: String
+    Default : "arn:aws:codecommit:ap-northeast-1:968506721144:eg-iot_top"
+
+Resources:
+#  Repo:
+#    Type: AWS::CodeCommit::Repository
+#    Properties:
+#      RepositoryName: !Sub SampleRepository-${AWS::AccountId}
+#      RepositoryDescription: "Sample Repository"
+
+# ------------------------------------------------------------#
+# CodeCommitSourceRole create
+# ------------------------------------------------------------#
+  CodeCommitSourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+              - !Sub arn:aws:iam::${ProductionAccountId}:root
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: "codeCommitSourceRole"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource:
+                  - !Sub ${ProductionS3BucketARN}/*
+              - Effect: Allow
+                Action: 
+                  - kms:DescribeKey
+                  - kms:GenerateDataKey*
+                  - kms:Encrypt
+                  - kms:ReEncrypt*
+                  - kms:Decrypt
+                Resource:
+                  - !Ref ProductionCmkArn
+              - Effect: Allow
+                Action: 
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+                Resource:
+                  - !Ref DevelopEgIotManagementARN
+                  - !Ref DevelopEgIotTopARN
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  CodeCommitSourceRoleARN:
+    Value: !GetAtt CodeCommitSourceRole.Arn
+    Export:
+      Name: "CodeCommitSourceRoleARN"

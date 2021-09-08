@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "cloudwatch alarm create"
+
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  EC2InstanceId:
+    Type: "AWS::EC2::Instance::Id"
+
+  DBInstanceID:
+    Type: "String"
+
+Resources:
+  CloudWatchAlarm:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-ec2-isStatusCheckFailed"
+          AlarmDescription: "EC2インスタンスのステータスを監視"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "StatusCheckFailed_System"
+          Namespace: "AWS/EC2"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "InstanceId"
+              Value: !Ref EC2InstanceId
+          Period: 300
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "missing"
+
+  CloudWatchAlarm2:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-iot-isPublishIn.AuthError"
+          AlarmDescription: "Iotポリシー定義外のtopicに対してpublishされた数をカウント"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "PublishIn.AuthError"
+          Namespace: "AWS/IoT"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "Protocol"
+              Value: "MQTT"
+          Period: 60
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "notBreaching"
+
+  CloudWatchAlarm3:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-iot-isPublishInSuccess"
+          AlarmDescription: "毎日DGWより正常にデータがpublishされていること"
+          ActionsEnabled: true
+#          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "PublishIn.Success"
+          Namespace: "AWS/IoT"
+          Statistic: "Sum"
+          Dimensions: 
+            - 
+              Name: "Protocol"
+              Value: "MQTT"
+          Period: 60
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 0
+          ComparisonOperator: "LessThanOrEqualToThreshold"
+          TreatMissingData: "breaching"
+
+  CloudWatchAlarm4:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-iot-isRuleFailure"
+          AlarmDescription: "Iotルールでエラーが発生した場合の通知"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "Failure"
+          Namespace: "AWS/IoT"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "ActionType"
+              Value: "Lambda"
+            - 
+              Name: "RuleName"
+              Value: "latest_prd"
+          Period: 60
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "missing"
+
+  CloudWatchAlarm5:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-lambda-isErrors"
+          AlarmDescription: "公開DB作成処理のエラー通知"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "Errors"
+          Namespace: "AWS/Lambda"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "FunctionName"
+              Value: "latest_order"
+            - 
+              Name: "Resource"
+              Value: "latest_order"
+          Period: 60
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "missing"
+
+  CloudWatchAlarm6:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-lambda-sensorDistributionUnregistered"
+          AlarmDescription: "振分けマスタに登録されていない場合のエラー通知"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "sensor_distribution_unregistered"
+          Namespace: "lambdaLog"
+          Statistic: "Average"
+          Period: 60
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "notBreaching"
+
+  CloudWatchAlarm7:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: "alarm-rds-isFreeStorageSpace"
+          AlarmDescription: "RDSのストレージ要領が逼迫している際の通知(1GB未満)"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "FreeStorageSpace"
+          Namespace: "AWS/RDS"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "DBInstanceIdentifier"
+              Value: "db.t3.micro"
+          Period: 300
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1073741824
+          ComparisonOperator: "LessThanThreshold"
+          TreatMissingData: "missing"
+
+  LogsMetricFilter:
+      Type: "AWS::Logs::MetricFilter"
+      Properties:
+          FilterPattern: "ERROR"
+          LogGroupName: "/aws/lambda/latest_order"
+          MetricTransformations: 
+            - 
+              MetricName: "error"
+              MetricNamespace: "lambdaLog"
+              MetricValue: "1"
+
+  LogsMetricFilter2:
+      Type: "AWS::Logs::MetricFilter"
+      Properties:
+          FilterPattern: "センサ振分けマスタに未定義のデータを受信しました。"
+          LogGroupName: "/aws/lambda/latest_order"
+          MetricTransformations: 
+            - 
+              MetricName: "sensor_distribution_unregistered"
+              MetricNamespace: "lambdaLog"
+              MetricValue: "1"
+

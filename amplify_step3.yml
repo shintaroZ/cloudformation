@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Step 3, Environment and Pipeline (in Production Account)
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+#  SubnetId:
+#    Description: Public Subnet (Internet routable)
+#    Type: String
+#  VpcId:
+#    Type: String
+#  ArtifactBucketName:
+#    Description: Production Account S3 Bucket Name for Artifact (Created by amplify_step1.yml)
+#    Type: String
+#  CmkArn:
+#    Description: Production Account CMK ARN (Created by 01-requirement.yml)
+#    Type: String
+#  CodePipelineRoleArn:
+#    Description: Production Account CodePipeline Service Role ARN (Created by amplify_step1.yml)
+#    Type: String
+#  CodeDeployRoleArn:
+#    Description: Production Account CodeDeploy Service Role ARN (Created by amplify_step1.yml)
+#    Type: String
+# 開発環境のCodeCommitRoleArn
+  CodeCommitRoleArn:
+    Description: Repository Account CodeCommit Action Role ARN (Created by amplify_step2.yml)
+    Type: String
+    Default : "arn:aws:iam::968506721144:role/amplify-2-CodeCommitSourceRole-RMYVOBCGSBMH"
+
+  RepositoryName:
+    Description: Repository Account CodeCommit Repository Name (Created by amplify_step2.yml)
+    Type: String
+    Default : "master"
+
+Resources:
+
+#  InstanceSecurityGroup:
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#        GroupDescription: Allow http to client host
+#        VpcId:
+#          Ref: VpcId
+#        SecurityGroupIngress:
+#        - IpProtocol: tcp
+#          FromPort: 80
+#          ToPort: 80
+#          CidrIp: 0.0.0.0/0
+#  Ec2Instance: 
+#    Type: AWS::EC2::Instance
+#    Properties: 
+#      ImageId: ami-0ee1410f0644c1cac # Tokyo Region
+#      IamInstanceProfile: !Ref InstanceProfile
+#      InstanceType: t3.micro
+#      SecurityGroupIds: 
+#        - !Ref InstanceSecurityGroup
+#      SubnetId: !Ref SubnetId
+#      Tags: 
+#        - Key: "Name"
+#          Value: "CodePipelineApp"
+#      UserData: !Base64 |
+#        #!/bin/bash
+#        yum -y update
+#        yum install -y ruby
+#        yum install -y aws-cli
+#        cd /home/ec2-user
+#        aws s3 cp s3://aws-codedeploy-ap-northeast-1/latest/install . --region ap-northeast-1
+#        chmod +x ./install
+#        ./install auto
+#  InstanceProfile: 
+#    Type: "AWS::IAM::InstanceProfile"
+#    Properties: 
+#      Path: "/"
+#      Roles: 
+#        - 
+#          Ref: "Role"
+#  Role:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: 2012-10-17
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service:
+#              - ec2.amazonaws.com
+#            Action:
+#              - sts:AssumeRole
+#      Path: /
+#      ManagedPolicyArns: 
+#        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy
+#      Policies:
+#        - PolicyName: kms
+#          PolicyDocument:
+#            Version: 2012-10-17
+#            Statement:
+#              - Effect: Allow
+#                Action: 
+#                  - kms:DescribeKey
+#                  - kms:GenerateDataKey*
+#                  - kms:Encrypt
+#                  - kms:ReEncrypt*
+#                  - kms:Decrypt
+#                Resource:
+#                  - !Ref CmkArn
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ComputePlatform: Server
+  DeploymentGroup: 
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties: 
+      ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters: 
+        - Type: KEY_AND_VALUE
+          Key: Name
+          Value: CodePipelineApp
+      ServiceRoleArn: !ImportValue CodeDeployRoleArn
+  Pipeline: 
+    Type: AWS::CodePipeline::Pipeline 
+    Properties: 
+      RoleArn: !ImportValue CodePipelineRoleArn
+      Stages: 
+        - 
+          Name: Source
+          Actions:
+            - Name: Source
+              InputArtifacts: []
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RepositoryName: !Ref RepositoryName
+                BranchName: master
+                PollForSourceChanges: false
+              RunOrder: 1
+              ActionTypeId:
+                Version: 1
+                Provider: CodeCommit
+                Category: Source
+                Owner: AWS
+              RoleArn: !Ref CodeCommitRoleArn
+        - 
+          Name: "Top-Release" 
+          Actions: 
+            - 
+              Name: ReleaseAction
+              InputArtifacts: 
+                - 
+                  Name: SourceOutput 
+              ActionTypeId: 
+                Category: Deploy 
+                Owner: AWS 
+                Version: 1
+                Provider: CodeDeploy 
+              Configuration: 
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref DeploymentGroup
+              RunOrder: 1 
+      ArtifactStore: 
+        Type: S3 
+        Location: !ImportValue ArtifactBucketName
+        EncryptionKey:
+          Id: !ImportValue CmkArn
+          Type: KMS

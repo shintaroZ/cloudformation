@@ -9,47 +9,27 @@ Metadata:
         Parameters:
           - proxyName
       - Label:
-          default: "RDS Configuration"
+          default: "RDS and SecretsManager Configuration"
         Parameters:
-          - DBInstanceName
-          - DBMasterUserName
-          - DBPassword
-          - DBHost
-          - DBPort
+          - DBInstanceId
+          - SecretsManagerARN
     ParameterLabels:
-      DBInstanceName:
-        default: "DBInstanceName"
-      DBMasterUserName:
-        default: "DBUserName"
-      DBPassword:
-        default: "DBPassword"
-      DBHost:
-        default: "DBHost"
-      DBPort:
-        default: "DBPort"
+      DBInstanceId:
+        default: "DBInstanceId"
+      SecretsManagerARN:
+        default: "SecretsManagerARN"
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
-  proxyName:
-    Type: String
-    Default: "budonoki-proxy"
-  DBInstanceName:
+  DBInstanceId:
     Type: String
     Default: "budonoki-rds"
-  DBMasterUserName:
+    Description : "DBInstanceId output to rds stack"
+  SecretsManagerARN:
     Type: String
-    Default: "dbuser"
-  DBPassword:
-    Type: String
-    NoEcho: true
-    Default: "dbpassword"
-  DBHost:
-    Type: String
-    Default: "budonoki-rds.c4otf2hm9tqe.ap-northeast-1.rds.amazonaws.com"
-  DBPort:
-    Type: Number
-    Default: 3306
+    Default: "arn********"
+    Description : "SecretsManagerARN output to rds stack"
   vpcId:
     Type: 'AWS::EC2::VPC::Id'
   subnetIda:
@@ -68,7 +48,7 @@ Resources:
   RDSDBProxy:
       Type: "AWS::RDS::DBProxy"
       Properties:
-          DBProxyName: !Sub "${proxyName}"
+          DBProxyName: !Sub "${DBInstanceId}-Proxy"
           EngineFamily: "MYSQL"
           VpcSecurityGroupIds: 
             - !Sub "${securityGroupId}"
@@ -78,7 +58,7 @@ Resources:
           Auth: 
             - 
               AuthScheme: "SECRETS"
-              SecretArn: !ImportValue SecretsManagerSecret-ARN
+              SecretArn: !Sub ${SecretsManagerARN}
               IAMAuth: "DISABLED"
           RoleArn: !GetAtt 
             - RDSProxyRole
@@ -92,7 +72,7 @@ Resources:
       Properties:
           DBProxyName: !Ref RDSDBProxy
           TargetGroupName: "default"
-          DBInstanceIdentifiers : [ !Ref DBInstanceName ]
+          DBInstanceIdentifiers : [ !Ref DBInstanceId ]
           ConnectionPoolConfigurationInfo: 
               MaxConnectionsPercent: 100
               MaxIdleConnectionsPercent: 50
@@ -103,7 +83,7 @@ Resources:
   RDSProxyRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: "rdsProxyRole"
+      RoleName: !Sub "${DBInstanceId}-Proxy-Role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -116,15 +96,6 @@ Resources:
       ManagedPolicyArns:
         - !Ref SecretsManagerManagedPolicy
       Path: /
-#      Policies:
-#        - PolicyName: AllowGetSecretValue
-#          PolicyDocument:
-#            Version: "2012-10-17"
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - secretsmanager:GetSecretValue
-#                Resource: !Ref SecretsManagerManagedPolicy
   SecretsManagerManagedPolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -137,53 +108,11 @@ Resources:
           - Effect: Allow
             Action:
               - "secretsmanager:GetSecretValue"
-            Resource: !ImportValue SecretsManagerSecret-ARN
+            Resource: !Sub ${SecretsManagerARN}
           - Effect: Allow
             Action:
               - "kms:Decrypt"
-            Resource: !ImportValue SampleKey-ARN
+            Resource: !ImportValue SecretsManagerKey-ARN
             Condition:
               StringEquals:
                 kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
-
-
-#  IAMRoleForRdsProxy:
-#    Type: 'AWS::IAM::Role'
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Version: "2012-10-17"
-#        Statement:
-#          -
-#            Effect: "Allow"
-#            Principal:
-#              Service:
-#                - "rds.amazonaws.com"
-#            Action:
-#              - "sts:AssumeRole"
-#      ManagedPolicyArns:
-#        - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
-##        - 'arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser'
-#      MaxSessionDuration: 3600
-#      Path: "/"
-#      RoleName: "rdsProxyRole"
-
-#  SecretsManagerManagedPolicy:
-#    Type: "AWS::IAM::ManagedPolicy"
-#    Properties:
-#      Description: "Get values from Secrets Manager"
-#      ManagedPolicyName: "rds-proxy-policy"
-#      Path: /
-#      PolicyDocument:
-#        Version: "2012-10-17"
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - "secretsmanager:GetSecretValue"
-#            Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:hoge"
-#          - Effect: Allow
-#            Action:
-#              - "kms:Decrypt"
-#            Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/testkey"
-#            Condition:
-#              StringEquals:
-#                kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"

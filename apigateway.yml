@@ -1,16 +1,39 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "APIGateway Create"
+Metadata: 
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Project Name Prefix"
+        Parameters: 
+          - PJPrefix
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: "eg-iot"
+    Description : "input project prefix"
+    
 Resources:
+# ------------------------------------------------------------#
+# RestAPI
+# ------------------------------------------------------------#
   ApiGatewayRestApi:
       Type: "AWS::ApiGateway::RestApi"
       Properties:
-          Name: "eg_iot_api"
-          Description: "eG-Iot-API"
+          Name: !Sub "${PJPrefix}-api"
+          Description: !Sub "${PJPrefix}-API"
           ApiKeySourceType: "HEADER"
           EndpointConfiguration: 
               Types: 
                 - "REGIONAL"
 
+# ------------------------------------------------------------#
+# リソース/datacollection
+# ------------------------------------------------------------#
   ApiGatewayResourceDataCollection:
       Type: "AWS::ApiGateway::Resource"
       Properties:
@@ -18,6 +41,9 @@ Resources:
           PathPart: "datacollection"
           ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
 
+# ------------------------------------------------------------#
+# リソース/mailsend
+# ------------------------------------------------------------#
   ApiGatewayResourceMailSend:
       Type: "AWS::ApiGateway::Resource"
       Properties:
@@ -25,6 +51,9 @@ Resources:
           PathPart: "mailsend"
           ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
 
+# ------------------------------------------------------------#
+# リクエスト入力チェック
+# ------------------------------------------------------------#
   RequestValidator:
       Type: AWS::ApiGateway::RequestValidator
       Properties: 
@@ -33,6 +62,9 @@ Resources:
           ValidateRequestBody: true
           ValidateRequestParameters: true
 
+# ------------------------------------------------------------#
+# メソッド datacollection/delete
+# ------------------------------------------------------------#
   ApiGatewayMethod:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -66,6 +98,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -99,8 +134,11 @@ Resources:
                       }
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_delete:DEV/invocations"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_delete:PRD/invocations"
 
+# ------------------------------------------------------------#
+# メソッド:datacollection/get
+# ------------------------------------------------------------#
   ApiGatewayMethod2:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -133,6 +171,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -171,9 +212,12 @@ Resources:
                       }
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_get:DEV/invocations"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_get:PRD/invocations"
 
 
+# ------------------------------------------------------------#
+# メソッド:datacollection/options
+# ------------------------------------------------------------#
   ApiGatewayMethod3:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -216,6 +260,9 @@ Resources:
               TimeoutInMillis: 29000
               Type: "MOCK"
 
+# ------------------------------------------------------------#
+# メソッド:datacollection/post
+# ------------------------------------------------------------#
   ApiGatewayMethod4:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -251,6 +298,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -286,8 +336,11 @@ Resources:
                       
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_upsert:DEV/invocations"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_datacollection_upsert:PRD/invocations"
 
+# ------------------------------------------------------------#
+# メソッド:mailsend/delete
+# ------------------------------------------------------------#
   ApiGatewayMethod5:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -320,6 +373,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -352,8 +408,11 @@ Resources:
                       }
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_delete:DEV/invocations"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_delete:PRD/invocations"
 
+# ------------------------------------------------------------#
+# メソッド:mailsend/get
+# ------------------------------------------------------------#
   ApiGatewayMethod6:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -382,6 +441,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -407,8 +469,11 @@ Resources:
                       }
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_get:DEV/invocations"
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_get:PRD/invocations"
 
+# ------------------------------------------------------------#
+# メソッド:mailsend/options
+# ------------------------------------------------------------#
   ApiGatewayMethod7:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -443,6 +508,9 @@ Resources:
               TimeoutInMillis: 29000
               Type: "MOCK"
 
+# ------------------------------------------------------------#
+# メソッド:mailsend/post
+# ------------------------------------------------------------#
   ApiGatewayMethod8:
       Type: "AWS::ApiGateway::Method"
       Properties:
@@ -474,6 +542,9 @@ Resources:
           Integration: 
               CacheNamespace: !Ref ApiGatewayResourceMailSend
               ContentHandling: "CONVERT_TO_TEXT"
+              Credentials: !GetAtt 
+                - IAMRoleForApiGateway
+                - Arn
               IntegrationHttpMethod: "POST"
               IntegrationResponses: 
                 - 
@@ -507,5 +578,26 @@ Resources:
                       
               TimeoutInMillis: 29000
               Type: "AWS"
-              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_upsert:DEV/invocations"
-
+              Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_upsert:PRD/invocations"
+# ------------------------------------------------------------#
+# ApiGatewayRole create
+# ------------------------------------------------------------#
+  IAMRoleForApiGateway:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator'
+        - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
+      MaxSessionDuration: 3600
+      Path: "/"
+      RoleName: "apiGatewayRole"

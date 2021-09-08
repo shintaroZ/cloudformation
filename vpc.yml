@@ -17,8 +17,6 @@ Metadata:
           - PublicSubnetCCIDR
           - PrivateSubnetACIDR
           - PrivateSubnetCCIDR
-          - PrivateLambdaSubnetACIDR
-          - PrivateLambdaSubnetCCIDR
     ParameterLabels: 
       VPCCIDR: 
         default: "VPC CIDR"
@@ -30,10 +28,6 @@ Metadata:
         default: "PrivateSubnetA CIDR"
       PrivateSubnetCCIDR: 
         default: "PrivateSubnetC CIDR"
-      PrivateLambdaSubnetACIDR: 
-        default: "PrivateLambdaSubnetA CIDR"
-      PrivateLambdaSubnetCCIDR: 
-        default: "PrivateLambdaSubnetC CIDR"
 
 # ------------------------------------------------------------#
 # Input Parameters
@@ -41,7 +35,8 @@ Metadata:
 Parameters:
   PJPrefix:
     Type: String
-    Default: "eg-Iot"
+    Default: "eg-iot"
+    Description : "input project prefix"
 
   VPCCIDR:
     Type: String
@@ -62,14 +57,6 @@ Parameters:
   PrivateSubnetCCIDR:
     Type: String
     Default: "10.1.102.0/24"
-
-  PrivateLambdaSubnetACIDR:
-    Type: String
-    Default: "10.1.103.0/24"
-
-  PrivateLambdaSubnetCCIDR:
-    Type: String
-    Default: "10.1.104.0/24"
 Resources: 
 # ------------------------------------------------------------#
 #  VPC
@@ -148,27 +135,6 @@ Resources:
         - Key: Name
           Value: !Sub "${PJPrefix}-private-subnet-c"
 
-# Private Lambda SubnetA Create
-  PrivateLambdaSubnetA: 
-    Type: "AWS::EC2::Subnet"
-    Properties: 
-      AvailabilityZone: "ap-northeast-1a"
-      CidrBlock: !Ref PrivateLambdaSubnetACIDR
-      VpcId: !Ref VPC 
-      Tags: 
-        - Key: Name
-          Value: !Sub "${PJPrefix}-private-lambda-subnet-a"
-
-# Private Lambda SubnetC Create
-  PrivateLambdaSubnetC: 
-    Type: "AWS::EC2::Subnet"
-    Properties: 
-      AvailabilityZone: "ap-northeast-1c"
-      CidrBlock: !Ref PrivateLambdaSubnetCCIDR
-      VpcId: !Ref VPC 
-      Tags: 
-        - Key: Name
-          Value: !Sub "${PJPrefix}-private-lambda-subnet-c"
 # ------------------------------------------------------------#
 #  RouteTable
 # ------------------------------------------------------------#
@@ -190,14 +156,6 @@ Resources:
         - Key: Name
           Value: !Sub "${PJPrefix}-private-route"
 
-# private lambda routetable create
-  PrivateLambdaRouteTable: 
-    Type: "AWS::EC2::RouteTable"
-    Properties: 
-      VpcId: !Ref VPC 
-      Tags: 
-        - Key: Name
-          Value: !Sub "${PJPrefix}-private-lambda-route"
 # ------------------------------------------------------------#
 # Routing
 # ------------------------------------------------------------#
@@ -248,20 +206,6 @@ Resources:
       SubnetId: !Ref PrivateSubnetC
 
 
-# PrivateRouteTable Associate LambdaSubnetA
-  PrivateLambdaSubnetARouteTableAssociation: 
-    Type: "AWS::EC2::SubnetRouteTableAssociation"
-    Properties: 
-      RouteTableId: !Ref PrivateLambdaRouteTable 
-      SubnetId: !Ref PrivateLambdaSubnetA
-
-# PrivateRouteTable Associate LambdaSubnetC
-  PrivateLambdaSubnetCRouteTableAssociation: 
-    Type: "AWS::EC2::SubnetRouteTableAssociation"
-    Properties: 
-      RouteTableId: !Ref PrivateLambdaRouteTable
-      SubnetId: !Ref PrivateLambdaSubnetC
-
 # ------------------------------------------------------------#
 # VPC Endpoint
 # ------------------------------------------------------------#
@@ -274,7 +218,7 @@ Resources:
           ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
           PolicyDocument: "{\"Version\":\"2008-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"*\",\"Resource\":\"*\"}]}"
           RouteTableIds: 
-            - !Ref PrivateLambdaRouteTable
+            - !Ref PublicRouteTable
           PrivateDnsEnabled: false
 # ------------------------------------------------------------#
 # Output Parameters
@@ -332,16 +276,6 @@ Outputs:
     Export:
       Name: !Sub "${PJPrefix}-private-subnet-c-cidr"
 
-  PrivateLambdaSubnetACIDR:
-    Value: !Ref PrivateLambdaSubnetACIDR
-    Export:
-      Name: !Sub "${PJPrefix}-private-lambda-subnet-a-cidr"
-
-  PrivateLambdaSubnetCCIDR:
-    Value: !Ref PrivateLambdaSubnetCCIDR
-    Export:
-      Name: !Sub "${PJPrefix}-private-lambda-subnet-c-cidr"
-
 # Route
   PublicRouteTable:
     Value: !Ref PublicRouteTable
@@ -353,7 +287,3 @@ Outputs:
     Export:
       Name: !Sub "${PJPrefix}-private-route"
       
-  PrivateLambdaRouteTable:
-    Value: !Ref PrivateRouteTable
-    Export:
-      Name: !Sub "${PJPrefix}-private-lambda-route"
