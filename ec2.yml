@@ -18,7 +18,6 @@ Metadata:
           - EC2InstanceInstanceType
           - EC2InstanceVolumeType
           - EC2InstanceVolumeSize
-          - SSHAccessSourceIP
 
     ParameterLabels:
       KeyPairName:
@@ -33,8 +32,6 @@ Metadata:
         default: "EC2 VolumeType"
       EC2InstanceVolumeSize:
         default: "EC2 VolumeSize"
-      SSHAccessSourceIP:
-        default: "SSH AccessSourceIP"
 
 # ------------------------------------------------------------#
 # Input Parameters
@@ -63,9 +60,6 @@ Parameters:
   EC2InstanceVolumeSize:
     Type: String
     Default: "20"
-  SSHAccessSourceIP:
-    Type: String
-    Default: 0.0.0.0/0
     
   vpcId:
     Type: 'AWS::EC2::VPC::Id'

@@ -1,48 +1,24 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "amplify create"
+Description: "Amplify and Codecommit create"
 
-
-
-# ------------------------------------------------------------#
-# Input Parameters
-# ------------------------------------------------------------#
-Parameters:
-  managementCodeCommitUrl:
-    Type: String
-    Default: "https://git-codecommit.ap-northeast-1.amazonaws.com/v1/repos/eg-iot_management"
-    Description : "input management code commit url"
-  topCodeCommitUrl:
-    Type: String
-    Default: "https://ap-northeast-1.console.aws.amazon.com/codesuite/codecommit/repositories/eg-iot_top/browse/refs/heads/master?region=ap-northeast-1"
-    Description : "input top code commit url"
-    
 Resources:
-
-#  AmplifyBranch:
-#      Type: "AWS::Amplify::Branch"
-#      Properties:
-#          BranchName: "master"
-#          Stage: "PRODUCTION"
-#          AppId: "d35bjnj2sqbpnv"
-#          EnablePullRequestPreview: false
-#          EnableAutoBuild: true
-#          EnablePerformanceMode: false
-
 # ------------------------------------------------------------#
 # 管理画面
 # ------------------------------------------------------------#
-  AmplifyApp:
+  RepositoryManagement:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: "eg-iot_management_repository"
+      RepositoryDescription: "管理画面"
+  AmplifyAppManagement:
       Type: "AWS::Amplify::App"
       Properties:
-          Name: "eg-iot_management"
-#          Repository: !Sub "${managementCodeCommitUrl}"
-          IAMServiceRole: !GetAtt 
-            - IAMRoleForAmplify
-            - Arn
+          Name: "eg-iot_management_app"
+          Repository: !GetAtt RepositoryManagement.CloneUrlHttp
+          IAMServiceRole: !GetAtt IAMRoleForAmplify.Arn
           EnvironmentVariables: 
             - 
               Name: "_LIVE_UPDATES"
-#              Value: "[{\\"pkg\\":\\"yarn\\",\\"type\\":\\"npm\\",\\"version\\":\\"latest\\"}]"
               Value: "[{\"pkg\":\"yarn\",\"type\":\"npm\",\"version\":\"latest\"}]"
           BasicAuthConfig: 
               EnableBasicAuth: false
@@ -83,14 +59,17 @@ Resources:
 # ------------------------------------------------------------#
 # Top画面
 # ------------------------------------------------------------#
-  AmplifyApp2:
+  RepositoryTop:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: "eg-iot_top_repository"
+      RepositoryDescription: "Top画面"
+  AmplifyAppTop:
       Type: "AWS::Amplify::App"
       Properties:
-          Name: "eg-iot_top"
-#          Repository: !Sub "${topCodeCommitUrl}"
-          IAMServiceRole: !GetAtt 
-            - IAMRoleForAmplify
-            - Arn
+          Name: "eg-iot_top_app"
+          Repository: !GetAtt RepositoryTop.CloneUrlHttp
+          IAMServiceRole: !GetAtt IAMRoleForAmplify.Arn
           CustomRules: 
             - 
               Source: "/<*>"
@@ -145,3 +124,24 @@ Resources:
       Path: "/"
       RoleName: "amplifyRole"
 
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  ManagementView:
+    Value: !GetAtt AmplifyAppManagement.DefaultDomain
+    Export:
+      Name: "ManagementView"
+  TopView:
+    Value: !GetAtt AmplifyAppTop.DefaultDomain
+    Export:
+      Name: "TopView"
+      
+  RepositoryCloneUrlHttpManagement:
+    Value: !GetAtt RepositoryManagement.CloneUrlHttp
+    Export:
+      Name: "RepositoryCloneUrlHttpManagement"
+  RepositoryCloneUrlHttpTop:
+    Value: !GetAtt RepositoryTop.CloneUrlHttp
+    Export:
+      Name: "RepositoryCloneUrlHttpTop"

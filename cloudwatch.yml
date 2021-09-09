@@ -12,7 +12,15 @@ Parameters:
   DBInstanceID:
     Type: "String"
 
+  s3BucketName:
+    Type: String
+    Default: "eg-iot-budonoki"
+    Description : "input s3 bucketName"
+    
 Resources:
+# ------------------------------------------------------------#
+# CloudWatchAlarm create
+# ------------------------------------------------------------#
   CloudWatchAlarm:
       Type: "AWS::CloudWatch::Alarm"
       Properties:
@@ -162,6 +170,9 @@ Resources:
           ComparisonOperator: "LessThanThreshold"
           TreatMissingData: "missing"
 
+# ------------------------------------------------------------#
+# LogMetrics create
+# ------------------------------------------------------------#
   LogsMetricFilter:
       Type: "AWS::Logs::MetricFilter"
       Properties:
@@ -184,3 +195,19 @@ Resources:
               MetricNamespace: "lambdaLog"
               MetricValue: "1"
 
+# ------------------------------------------------------------#
+# cron create
+# ------------------------------------------------------------#
+  EventsRule:
+      Type: "AWS::Events::Rule"
+      Properties:
+          Name: "dataMaintenance"
+          Description: "データメンテナンス"
+          ScheduleExpression: "cron(0 15 * * ? *)"
+          State: "ENABLED"
+          Targets: 
+            - 
+              Arn: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:dataMaintenance:PRD"
+              Id: !Sub "${s3BucketName}-id"
+              Input: !Sub "{   \"clientName\": \"${s3BucketName}\" }"
+          EventBusName: "default"

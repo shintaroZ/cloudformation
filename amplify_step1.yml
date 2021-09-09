@@ -11,6 +11,12 @@ Parameters:
     MinLength: 12
     Type: String
     Default : "968506721144"
+    
+  RepositoryAccountARN:
+    Description: "Repository Account ARN"
+    Type: String
+    Default : "arn:aws:iam::968506721144:user/St-Dev-Otoi"
+    
   UserName:
     Description: "login user name"
     Type: String
@@ -42,7 +48,8 @@ Resources:
                 Action: 
                   - sts:AssumeRole
                 Resource:
-                  - !Sub arn:aws:iam::${RepositoryAccountId}:role/* # Cross Account Access
+#                  - !Sub arn:aws:iam::${RepositoryAccountId}:role/* # Cross Account Access
+                  - !Sub ${RepositoryAccountARN}
               - Effect: Allow
                 Action: 
                   - iam:PassRole
@@ -227,7 +234,8 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+#            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+            - !Sub ${RepositoryAccountARN}
           Resource:
           - !Sub arn:aws:s3:::${S3Bucket}/*
         - Action:
@@ -235,7 +243,8 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+#            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+            - !Sub ${RepositoryAccountARN}
           Resource:
           - !Sub arn:aws:s3:::${S3Bucket}
         Version: 2012-10-17
@@ -255,7 +264,8 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !Sub arn:aws:iam::${AWS::AccountId}:root
+#            - !Sub arn:aws:iam::${AWS::AccountId}:root
+            - !Sub ${RepositoryAccountARN}
           Action: kms:*
           Resource: "*"
         - Sid: Allow administration of the key
@@ -281,7 +291,8 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+#            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+            - !Sub ${RepositoryAccountARN}
             - !GetAtt PipelineRole.Arn
             - !GetAtt DeployRole.Arn
           Action:
@@ -296,7 +307,8 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+#            - !Sub arn:aws:iam::${RepositoryAccountId}:root
+            - !Sub ${RepositoryAccountARN}
             - !GetAtt PipelineRole.Arn
             - !GetAtt DeployRole.Arn
           Action:

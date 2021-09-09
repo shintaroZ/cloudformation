@@ -30,7 +30,7 @@ Parameters:
   ProductionS3BucketARN:
     Description: Production Account S3 Bucket ARN for Artifact (Created by amplify_step1.yml)
     Type: String
-    Default : "arn:aws:s3:::artifacts-ap-northeast-1-262958308103-pipeline"
+    Default : "arn:aws:s3:::aws-us-east-2-262958308103-todynamoconv-pipe"
     
 # 本番環境のKMS
   ProductionCmkArn:

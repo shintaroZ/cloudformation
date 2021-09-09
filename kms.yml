@@ -25,6 +25,16 @@ Resources:
                   - ':root'
             Action: 'kms:*'
             Resource: '*'
+            
+# ------------------------------------------------------------#
+# kms Alias create
+# ------------------------------------------------------------#
+  Alias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/SecretsManagerKey
+      TargetKeyId:
+        Ref: SecretsManagerKey
 # ------------------------------------------------------------#
 # Output Parameters
 # ------------------------------------------------------------#

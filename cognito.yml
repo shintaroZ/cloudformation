@@ -200,4 +200,8 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
     Export:
       Name: !Sub "${ProjectPrefix}-UserPool-Client"
+  CognitoUserPoolARN:
+    Value: !GetAtt CognitoUserPool.Arn
+    Export:
+      Name: "CognitoUserPoolARN"
 
