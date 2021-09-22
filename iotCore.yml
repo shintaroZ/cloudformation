@@ -1,22 +1,37 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "iot core create"
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "IotCore Configuration"
+        Parameters:
+          - clientNamePrefix
+          - deviceId
+      - Label:
+          default: "S3 Configuration"
+        Parameters:
+          - s3BucketName
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
+  clientNamePrefix:
+    Type: String
+    Default: "budonoki"
+    Description : "input clientName"
+    
+  deviceId:
+    Type: String
+    Default: "*"
+    Description : "input deviceId. default is *"
+    
   s3BucketName:
     Type: String
     Default: "eg-iot-budonoki"
     Description : "input s3 bucketName"
     
-  clientNamePrefix:
-    Type: String
-    Default: "budonoki"
-    Description : "input clientName"
-
-  deviceId:
-    Type: String
-    Description : "input deviceId"
 Resources:
 # ------------------------------------------------------------#
 # IoTPolicy create DGW二台目以降は手動でResourceを追加
@@ -36,7 +51,7 @@ Resources:
                       "iot:Receive"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/mqtt/latest"
+                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/mqtt/${clientNamePrefix}/latest"
                     ]
                   },
                   {
@@ -45,7 +60,7 @@ Resources:
                       "iot:Subscribe"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/mqtt/latest"
+                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/mqtt/${clientNamePrefix}/latest"
                     ]
                   },
                   {
@@ -71,7 +86,7 @@ Resources:
       TopicRulePayload:
         AwsIotSqlVersion : "2016-03-23"
         RuleDisabled: false
-        Sql: !Sub "SELECT '${s3BucketName}' as clientName , * as receivedMessages FROM 'mqtt/latest'"
+        Sql: !Sub "SELECT '${s3BucketName}' as clientName , * as receivedMessages FROM 'mqtt/${clientNamePrefix}/latest'"
         Actions:
           - StepFunctions:
               ExecutionNamePrefix : !Sub "${clientNamePrefix}"
@@ -104,12 +119,16 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
       MaxSessionDuration: 3600
       Path: "/"
-      RoleName: "iotCoreRole"
+      RoleName: !Sub "${clientNamePrefix}-iotCoreRole"
 # ------------------------------------------------------------#
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  IoTRuleName:
-    Value: !GetAtt EdgeRecvMessageTopicRule.Name
+  iotCoreRuleName:
+    Value: !Ref EdgeRecvMessageTopicRule
     Export:
-      Name: !Sub "${PJPrefix}-vpc"
+      Name: "iotCoreRuleName"
+  iotCoreTopicName:
+    Value: !Sub "mqtt/${clientNamePrefix}/latest"
+    Export:
+      Name: "iotCoreTopicName"

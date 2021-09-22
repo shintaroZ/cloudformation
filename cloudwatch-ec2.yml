@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudWatchAlarm for EC2 create"
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "CloudWatch Resources"
+        Parameters:
+          - EC2InstanceId
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  EC2InstanceId:
+    Type: "AWS::EC2::Instance::Id"
+
+Resources:
+# ------------------------------------------------------------#
+# CloudWatchAlarm for EC2
+# ------------------------------------------------------------#
+  CloudWatchAlarmEC2:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: !Sub "alarm-ec2-${EC2InstanceId}-isStatusCheckFailed"
+          AlarmDescription: "EC2インスタンスのステータスを監視"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "StatusCheckFailed_System"
+          Namespace: "AWS/EC2"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "InstanceId"
+              Value: !Ref EC2InstanceId
+          Period: 300
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1
+          ComparisonOperator: "GreaterThanOrEqualToThreshold"
+          TreatMissingData: "missing"

@@ -605,12 +605,11 @@ Resources:
 # ------------------------------------------------------------#
 # cron create
 # ------------------------------------------------------------#
-  # ★顧客毎に必要
   EventsRule:
       Type: "AWS::Events::Rule"
       Properties:
           Name: !Sub "${s3BucketName}-dataMaintenance"
-          Description: !Sub "データメンテナンス(${s3BucketName})"
+          Description: "データメンテナンス"
           ScheduleExpression: "cron(0 15 * * ? *)"
           State: "ENABLED"
           Targets: 

@@ -6,13 +6,13 @@ Metadata:
       - Label: 
           default: "Project Name Prefix"
         Parameters: 
-          - PJPrefix
+          - ProjectPrefix
 
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------#
 Parameters:
-  PJPrefix:
+  ProjectPrefix:
     Type: String
     Default: "eg-iot"
     Description : "input project prefix"
@@ -24,8 +24,8 @@ Resources:
   ApiGatewayRestApi:
       Type: "AWS::ApiGateway::RestApi"
       Properties:
-          Name: !Sub "${PJPrefix}-api"
-          Description: !Sub "${PJPrefix}-API"
+          Name: !Sub "${ProjectPrefix}-api"
+          Description: !Sub "${ProjectPrefix}-API"
           ApiKeySourceType: "HEADER"
           EndpointConfiguration: 
               Types: 
@@ -614,10 +614,33 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
       MaxSessionDuration: 3600
       Path: "/"
-      RoleName: "apiGatewayRole"
+      RoleName: !Sub "${ProjectPrefix}-apiGatewayRole"
+
+# ------------------------------------------------------------#
+# Deployment 
+# ------------------------------------------------------------#
+  ApiGatewayRestApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiGatewayRestApiDeployment
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: "PRD"
+  ApiGatewayRestApiDeployment:
+    DependsOn: ApiGatewayMethod
+    Type: AWS::ApiGateway::Deployment
+    Properties: 
+      RestApiId: !Ref ApiGatewayRestApi
+#      StageName: "PRD"
 # ------------------------------------------------------------#
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  ApiGatewayAuthorizerId:
-    Value: !Ref ApiGatewayAuthorizer
+  ApiGatewayRestApiId:
+    Value: !Ref ApiGatewayRestApi
+    Export:
+      Name: "ApiGatewayRestApiId"
+
+  ApiGatewayRestApiEndpoint:
+    Value: !Sub "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/PRD"
+    Export:
+      Name: "ApiGatewayRestApiEndpoint"

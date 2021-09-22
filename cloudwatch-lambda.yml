@@ -1,71 +1,25 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "cloudwatch alarm create"
+# 1度だけ実行
+Description: "CloudWatchAlarm for Lambda create"
 
 Metadata:
   "AWS::CloudFormation::Interface":
     ParameterGroups:
       - Label:
-          default: "EC2 Resources"
-        Parameters:
-          - EC2InstanceId
-      - Label:
-          default: "RDS Resources"
-        Parameters:
-          - DBInstanceID
-      - Label:
-          default: "S3 Resources"
+          default: "CloudWatch Resources"
         Parameters:
           - s3BucketName
-          
-      - Label:
-          default: "IotCore Resources"
-        Parameters:
-          - iotCoreRuleName
 
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
-  EC2InstanceId:
-    Type: "AWS::EC2::Instance::Id"
-
-  DBInstanceID:
-    Type: "String"
-    Description : "input Rds InstansId"
-    
   s3BucketName:
     Type: String
     Default: "eg-iot-budonoki"
     Description : "input s3 bucketName"
     
-  iotCoreRuleName:
-    Type: "String"
-    Description : "input IotCore Rule Name"
 Resources:
-# ------------------------------------------------------------#
-# CloudWatchAlarm for EC2
-# ------------------------------------------------------------#
-  CloudWatchAlarmEC2:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: !Sub "alarm-ec2-${EC2InstanceId}-isStatusCheckFailed"
-          AlarmDescription: "EC2インスタンスのステータスを監視"
-          ActionsEnabled: true
-          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "StatusCheckFailed_System"
-          Namespace: "AWS/EC2"
-          Statistic: "Average"
-          Dimensions: 
-            - 
-              Name: "InstanceId"
-              Value: !Ref EC2InstanceId
-          Period: 300
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 1
-          ComparisonOperator: "GreaterThanOrEqualToThreshold"
-          TreatMissingData: "missing"
-
 # ------------------------------------------------------------#
 # CloudWatchAlarm for Lambda
 # ------------------------------------------------------------#
@@ -334,97 +288,6 @@ Resources:
           TreatMissingData: "missing"
           
 # ------------------------------------------------------------#
-# CloudWatchAlarm for IotCore
-# ------------------------------------------------------------#
-  CloudWatchAlarmIot1:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: "alarm-iot-common-isPublishIn.AuthError"
-          AlarmDescription: "Iotポリシー定義外のtopicに対してpublishされた数をカウント"
-          ActionsEnabled: true
-          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "PublishIn.AuthError"
-          Namespace: "AWS/IoT"
-          Statistic: "Average"
-          Dimensions: 
-            - 
-              Name: "Protocol"
-              Value: "MQTT"
-          Period: 60
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 1
-          ComparisonOperator: "GreaterThanOrEqualToThreshold"
-          TreatMissingData: "notBreaching"
-
-  CloudWatchAlarmIot2:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: "alarm-iot-common-isPublishInSuccess"
-          AlarmDescription: "毎日DGWより正常にデータがpublishされていること"
-          ActionsEnabled: true
-#          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "PublishIn.Success"
-          Namespace: "AWS/IoT"
-          Statistic: "Sum"
-          Dimensions: 
-            - 
-              Name: "Protocol"
-              Value: "MQTT"
-          Period: 60
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 0
-          ComparisonOperator: "LessThanOrEqualToThreshold"
-          TreatMissingData: "breaching"
-
-  # ★顧客毎に必要
-  CloudWatchAlarmIot3:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: !Sub "alarm-iot-${iotCoreRuleName}-isRuleFailure"
-          AlarmDescription: "Iotルールでエラーが発生した場合の通知"
-          ActionsEnabled: true
-          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "Failure"
-          Namespace: "AWS/IoT"
-          Statistic: "Average"
-          Dimensions: 
-            - 
-              Name: "RuleName"
-              Value: !Ref iotCoreRuleName
-          Period: 60
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 1
-          ComparisonOperator: "GreaterThanOrEqualToThreshold"
-          TreatMissingData: "missing"
-          
-# ------------------------------------------------------------#
-# CloudWatchAlarm for RDS
-# ------------------------------------------------------------#
-  # ★顧客毎に必要
-  CloudWatchAlarmRDS:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: !Sub "alarm-rds-${DBInstanceID}-isFreeStorageSpace"
-          AlarmDescription: "RDSのストレージ要領が逼迫している際の通知(1GB未満)"
-          ActionsEnabled: true
-          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "FreeStorageSpace"
-          Namespace: "AWS/RDS"
-          Statistic: "Average"
-          Dimensions: 
-            - 
-              Name: "DBInstanceIdentifier"
-              Value: !Ref DBInstanceID
-          Period: 300
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 1073741824
-          ComparisonOperator: "LessThanThreshold"
-          TreatMissingData: "missing"
-# ------------------------------------------------------------#
 # LogGroup and LogMetrics create
 # ------------------------------------------------------------#
   CloudWatchLogsLogGroup1:
@@ -605,12 +468,11 @@ Resources:
 # ------------------------------------------------------------#
 # cron create
 # ------------------------------------------------------------#
-  # ★顧客毎に必要
   EventsRule:
       Type: "AWS::Events::Rule"
       Properties:
           Name: !Sub "${s3BucketName}-dataMaintenance"
-          Description: !Sub "データメンテナンス(${s3BucketName})"
+          Description: "データメンテナンス"
           ScheduleExpression: "cron(0 15 * * ? *)"
           State: "ENABLED"
           Targets: 

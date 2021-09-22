@@ -188,6 +188,7 @@ Resources:
         character_set_results : "utf8"
         character_set_server : "utf8"
         skip-character-set-client-handshake : "1"
+        log_bin_trust_function_creators : "1"
 
 # ------------------------------------------------------------#
 #  SecurityGroup for RDS (MySQL)

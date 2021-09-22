@@ -1,20 +1,36 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "sns create"
+Metadata: 
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Project Name Prefix"
+        Parameters: 
+          - PJPrefix
+      - Label: 
+          default: "Management mailaddress"
+        Parameters: 
+          - SendMailAddress
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
+  PJPrefix:
+    Type: String
+    Default: "eg-iot"
+    Description : "input project prefix"
+
   SendMailAddress:
     Type: String
     Default: "s_otoi@matisse.co.jp"
-    Description : "input endpoint mailaddress"
+    Description : "input management mailaddress"
 
 Resources:
   SNSTopic:
       Type: "AWS::SNS::Topic"
       Properties:
           DisplayName: ""
-          TopicName: !Sub "sns-topic"
+          TopicName: !Sub "${PJPrefix}-sns-topic"
 
   SNSTopicPolicy:
       Type: "AWS::SNS::TopicPolicy"

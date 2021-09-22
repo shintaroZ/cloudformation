@@ -39,7 +39,7 @@ Resources:
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  SecretsManagerKey:
+  KMSKeyARN:
     Value: !GetAtt 
       - SecretsManagerKey
       - Arn

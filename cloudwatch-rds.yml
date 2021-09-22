@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudWatchAlarm for RDS and CloudWatchEvents create"
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "CloudWatch Resources"
+        Parameters:
+          - DBInstanceID
+          - s3BucketName
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  DBInstanceID:
+    Type: "String"
+  s3BucketName:
+    Type: String
+    Default: "eg-iot-budonoki"
+    Description : "input s3 bucketName"
+    
+Resources:
+# ------------------------------------------------------------#
+# CloudWatchAlarm for RDS
+# ------------------------------------------------------------#
+  CloudWatchAlarmRDS:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+          AlarmName: !Sub "alarm-rds-${DBInstanceID}-isFreeStorageSpace"
+          AlarmDescription: "RDSのストレージ要領が逼迫している際の通知(1GB未満)"
+          ActionsEnabled: true
+          AlarmActions: [ !ImportValue SNSTopicARN ]
+          MetricName: "FreeStorageSpace"
+          Namespace: "AWS/RDS"
+          Statistic: "Average"
+          Dimensions: 
+            - 
+              Name: "DBInstanceIdentifier"
+              Value: !Ref DBInstanceID
+          Period: 300
+          EvaluationPeriods: 1
+          DatapointsToAlarm: 1
+          Threshold: 1073741824
+          ComparisonOperator: "LessThanThreshold"
+          TreatMissingData: "missing"
+
+# ------------------------------------------------------------#
+# CloudWatchEvents create
+# ------------------------------------------------------------#
+  EventsRule:
+      Type: "AWS::Events::Rule"
+      Properties:
+          Name: !Sub "${s3BucketName}-dataMaintenance"
+          Description: "データメンテナンス"
+          ScheduleExpression: "cron(0 15 * * ? *)"
+          State: "ENABLED"
+          Targets: 
+            - 
+              Arn: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:dataMaintenance:PRD"
+              Id: !Sub "${s3BucketName}-id"
+              Input: !Sub "{   \"clientName\": \"${s3BucketName}\" }"
+          EventBusName: "default"

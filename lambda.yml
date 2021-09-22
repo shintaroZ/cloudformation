@@ -1,12 +1,25 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Lambda create."
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "VPC Configuration"
+        Parameters:
+          - vpcId
+          - subnetIda
+          - subnetIdc
+      - Label:
+          default: "S3 Configuration"
+        Parameters:
+          - S3BucketName
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
-  securityGroupId:
-    Type: 'AWS::EC2::SecurityGroup::Id'
-    Description : "select securityGroupId for rds-sg"
+  vpcId:
+    Type: 'AWS::EC2::VPC::Id'
   subnetIda:
     Type: 'AWS::EC2::Subnet::Id'
     Description : "select private-lambda-subnet-a"
@@ -31,7 +44,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "latest_order.zip"
+        S3Key : "resouces/latest_order.zip"
       Timeout: 180
       MemorySize: 128
       Runtime: python3.8
@@ -40,7 +53,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   LatestOrderVersion:
@@ -70,7 +83,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "dataMaintenance.zip"
+        S3Key : "resouces/dataMaintenance.zip"
       Timeout: 180
       MemorySize: 128
       Runtime: python3.8
@@ -79,7 +92,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   DataMaintenanceVersion:
@@ -109,7 +122,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "recovery.zip"
+        S3Key : "resouces/recovery.zip"
       Timeout: 900
       MemorySize: 128
       Runtime: python3.8
@@ -118,7 +131,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   RecoveryVersion:
@@ -148,7 +161,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_datacollection_delete.zip"
+        S3Key : "resouces/mastermainte_datacollection_delete.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -157,7 +170,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteDataCollectionDeleteVersion:
@@ -188,7 +201,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_datacollection_upsert.zip"
+        S3Key : "resouces/mastermainte_datacollection_upsert.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -197,7 +210,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteDataCollectionUpsertVersion:
@@ -228,7 +241,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_datacollection_get.zip"
+        S3Key : "resouces/mastermainte_datacollection_get.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -237,7 +250,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteDataCollectionGetVersion:
@@ -267,7 +280,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_mailsend_delete.zip"
+        S3Key : "resouces/mastermainte_mailsend_delete.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -276,7 +289,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteMailSendDeleteVersion:
@@ -307,7 +320,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_mailsend_upsert.zip"
+        S3Key : "resouces/mastermainte_mailsend_upsert.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -316,7 +329,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteMailSendUpsertVersion:
@@ -347,7 +360,7 @@ Resources:
         - Arn
       Code:
         S3Bucket : !Sub "${S3BucketName}"
-        S3Key : "mastermainte_mailsend_get.zip"
+        S3Key : "resouces/mastermainte_mailsend_get.zip"
       Timeout: 30
       MemorySize: 128
       Runtime: python3.8
@@ -356,7 +369,7 @@ Resources:
           - !Sub "${subnetIda}"
           - !Sub "${subnetIdc}"
         SecurityGroupIds: 
-          - !Sub "${securityGroupId}"
+          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MasterMainteMailSendGetVersion:
@@ -370,6 +383,85 @@ Resources:
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteMailSendGetFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# 閾値判定機能
+# ------------------------------------------------------------#
+  LimitJudgeFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "閾値判定機能"
+      FunctionName: "limitJudge"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/limitJudge.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  LimitJudgeVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref LimitJudgeFunction
+
+  LimitJudgeAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref LimitJudgeFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+# ------------------------------------------------------------#
+# メール通知機能
+# ------------------------------------------------------------#
+  MailsenderFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "メール通知機能"
+      FunctionName: "mailsender"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mailsender.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MailsenderVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MailsenderFunction
+
+  MailsenderAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MailsenderFunction
           FunctionVersion: "$LATEST"
           Name: "PRD"
 # ------------------------------------------------------------#
@@ -386,7 +478,7 @@ Resources:
           LayerName: "initRdsCommon"
           Content: 
               S3Bucket: !Sub "${S3BucketName}"
-              S3Key: "python.zip"
+              S3Key: "resouces/python.zip"
 
 # ------------------------------------------------------------#
 # lambdaRole create
@@ -415,3 +507,20 @@ Resources:
       MaxSessionDuration: 3600
       Path: "/"
       RoleName: "lambdaRole"
+# ------------------------------------------------------------#
+#  SecurityGroup for lambda
+#  ※アウトバウンドルール全て許可
+# ------------------------------------------------------------#
+  LambdaSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId:  !Sub "${vpcId}"
+      GroupName: !Sub "lambda-sg"
+      GroupDescription: "-"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "lambda-sg"
+      SecurityGroupEgress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"

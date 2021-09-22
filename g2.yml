@@ -1,0 +1,211 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 
+  GuardDuty VPC
+
+Metadata: 
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Project Name Prefix"
+        Parameters: 
+          - PJPrefix
+      - Label: 
+          default: "Network Configuration"
+        Parameters: 
+          - vpcId
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: "eg-iot"
+    Description : "input project prefix"
+
+  vpcId:
+    Type: 'AWS::EC2::VPC::Id'
+Resources: 
+# ------------------------------------------------------------#
+#  GuardDuty
+# ------------------------------------------------------------#
+  GuardDutyDetector:
+    Type: "AWS::GuardDuty::Detector"
+    Properties:
+      Enable: true
+# ------------------------------------------------------------#
+#  S3Bucket
+# ------------------------------------------------------------#
+  S3ForCloudTrail:
+    Type: 'AWS::S3::Bucket'
+#    DeletionPolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault: 
+              SSEAlgorithm: aws:kms
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpirationInDays
+            ExpirationInDays: 60
+            Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogBucket
+        LogFilePrefix: CloudTrail/
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketName: !Sub "${PJPrefix}-cloudtrail-${AWS::AccountId}"
+        
+  AccessLogBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: LogDeliveryWrite
+      BucketName: !Sub "${PJPrefix}-accesslog-${AWS::AccountId}"
+      
+  S3BucketPolicyForCloudTrail:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties: 
+      Bucket: !Ref S3ForCloudTrail
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: !Ref S3ForCloudTrail
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - 's3:GetBucketAcl'
+            Resource:
+              - !GetAtt S3ForCloudTrail.Arn
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - 's3:PutObject'
+            Resource:
+              - !Join
+                - ''
+                - - !GetAtt S3ForCloudTrail.Arn
+                  - /AWSLogs/
+                  - !Sub ${AWS::AccountId}
+                  - /*
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+                
+                
+# ------------------------------------------------------------#
+#  CloudWatchLogs
+# ------------------------------------------------------------#
+  CloudWatchLogsGroupForCloudTrail:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/cloudtrail/${AWS::AccountId}'
+      RetentionInDays: 365
+      
+  CloudWatchLogsGroupForVpcFlowLogs:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub '/aws/vpcflowlogs/${AWS::AccountId}'
+      RetentionInDays: 365
+      
+# ------------------------------------------------------------#
+#  CloudTrail
+# ------------------------------------------------------------#
+  CloudTrail:
+    DependsOn:
+      - S3BucketPolicyForCloudTrail
+#    Condition: CreateCentralizedResources
+    Type: 'AWS::CloudTrail::Trail'
+    Properties:
+      CloudWatchLogsLogGroupArn: !GetAtt CloudWatchLogsGroupForCloudTrail.Arn
+      CloudWatchLogsRoleArn: !GetAtt IAMRoleForCloudTrail.Arn
+      EnableLogFileValidation: true
+      EventSelectors:
+        - DataResources: 
+            # All S3 buckets
+            - Type: AWS::S3::Object
+              Values: 
+                - arn:aws:s3
+            # All Lambda functions
+            - Type: AWS::Lambda::Function
+              Values: 
+                - arn:aws:lambda
+      IncludeGlobalServiceEvents: true
+      IsLogging: true
+      IsMultiRegionTrail: true
+      S3BucketName: !Ref S3ForCloudTrail
+#      SnsTopicName: !Ref SnsTopicName
+      TrailName: !Sub ${AWS::StackName}
+      
+# ------------------------------------------------------------#
+#  VPCFlowLogs
+# ------------------------------------------------------------#
+  VPCFlowLogs:
+    Type: "AWS::EC2::FlowLog"
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt VPCFlowLogsIAMRole.Arn
+      LogGroupName: !Ref CloudWatchLogsGroupForVpcFlowLogs
+      ResourceId: !Ref vpcId
+      ResourceType: "VPC"
+#      TrafficType: "ALL"
+      TrafficType: "ACCEPT"
+       
+# ------------------------------------------------------------#
+#  Role Create
+# ------------------------------------------------------------#
+  IAMRoleForCloudTrail:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub "${PJPrefix}-cloudTrail-Role" 
+      RoleName: !Sub '${AWS::StackName}-CloudTrail-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Description: A role required for CloudTrail to access CloudWatch Logs.
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-AWSCloudTrailCloudWatchLogsPolicy-${AWS::Region}'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogStream'
+                Resource:
+                  - !GetAtt CloudWatchLogsGroupForCloudTrail.Arn
+      
+  VPCFlowLogsIAMRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      RoleName: !Sub "${PJPrefix}-Vpcflowlogs-Role" 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - "vpc-flow-logs.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+
+      Policies:
+      - PolicyName: !Sub "${PJPrefix}-vpcflowlogs-policy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "logs:DescribeLogGroups"
+            - "logs:DescribeLogStreams"
+            Resource: "*"

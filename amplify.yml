@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Amplify and Codecommit create"
 
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "S3 Configuration"
+        Parameters:
+          - S3BucketName
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  S3BucketName:
+    Type: String
+    Description : "input code in s3 bucket"
 Resources:
 # ------------------------------------------------------------#
 # 管理画面
@@ -8,11 +22,19 @@ Resources:
   RepositoryManagement:
     Type: AWS::CodeCommit::Repository
     Properties:
+      Code:
+        BranchName: "PRD"
+        S3:
+          Bucket: !Sub "${S3BucketName}"
+          Key: "resouces/eg-iot_management.zip"
       RepositoryName: "eg-iot_management_repository"
       RepositoryDescription: "管理画面"
   AmplifyAppManagement:
       Type: "AWS::Amplify::App"
       Properties:
+          AutoBranchCreationConfig:
+            EnableAutoBranchCreation: true
+            EnableAutoBuild: true
           Name: "eg-iot_management_app"
           Repository: !GetAtt RepositoryManagement.CloneUrlHttp
           IAMServiceRole: !GetAtt IAMRoleForAmplify.Arn
@@ -20,10 +42,6 @@ Resources:
             - 
               Name: "_LIVE_UPDATES"
               Value: "[{\"pkg\":\"yarn\",\"type\":\"npm\",\"version\":\"latest\"}]"
-          BasicAuthConfig: 
-              EnableBasicAuth: false
-              Username: "dataeg"
-              Password: "L3ewcF8D"
           CustomRules: 
             - 
               Source: "/<*>"
@@ -55,18 +73,32 @@ Resources:
           AccessToken: "REPLACEME"
           OauthToken: "REPLACEME"
           CustomHeaders: ""
-
+  AmplifyBranchManagement:
+    Type: 'AWS::Amplify::Branch'
+    Properties: 
+      AppId: !GetAtt AmplifyAppManagement.AppId
+      BranchName: "PRD"
+      Description: "Management-PRD"
+      EnableAutoBuild: true
 # ------------------------------------------------------------#
 # Top画面
 # ------------------------------------------------------------#
   RepositoryTop:
     Type: AWS::CodeCommit::Repository
     Properties:
+      Code:
+        BranchName: "PRD"
+        S3:
+          Bucket: !Sub "${S3BucketName}"
+          Key: "resouces/eg-iot_top.zip"
       RepositoryName: "eg-iot_top_repository"
       RepositoryDescription: "Top画面"
   AmplifyAppTop:
       Type: "AWS::Amplify::App"
       Properties:
+          AutoBranchCreationConfig:
+            EnableAutoBranchCreation: true
+            EnableAutoBuild: true
           Name: "eg-iot_top_app"
           Repository: !GetAtt RepositoryTop.CloneUrlHttp
           IAMServiceRole: !GetAtt IAMRoleForAmplify.Arn
@@ -101,6 +133,13 @@ Resources:
           AccessToken: "REPLACEME"
           OauthToken: "REPLACEME"
           CustomHeaders: ""
+  AmplifyBranchTop:
+    Type: 'AWS::Amplify::Branch'
+    Properties: 
+      AppId: !GetAtt AmplifyAppTop.AppId
+      BranchName: "PRD"
+      Description: "Top-PRD"
+      EnableAutoBuild: true
 # ------------------------------------------------------------#
 # IAMRoleForAmplify create
 # ------------------------------------------------------------#
@@ -118,6 +157,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSCodeCommitFullAccess'
         - 'arn:aws:iam::aws:policy/AdministratorAccess-Amplify'
 #        - 'arn:aws:iam::aws:policy/AdministratorAccess'
       MaxSessionDuration: 3600
@@ -128,14 +168,23 @@ Resources:
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  ManagementView:
-    Value: !GetAtt AmplifyAppManagement.DefaultDomain
+#  ManagementView:
+#    Value: !GetAtt AmplifyAppManagement.DefaultDomain
+#    Export:
+#      Name: "ManagementView"
+#  TopView:
+#    Value: !GetAtt AmplifyAppTop.DefaultDomain
+#    Export:
+#      Name: "TopView"
+# EndPointURL https://{branchName}.{defaultDomain}
+  ManagementViewURL:
+    Value: !Sub "https://prd.${AmplifyAppManagement.DefaultDomain}"
     Export:
-      Name: "ManagementView"
-  TopView:
-    Value: !GetAtt AmplifyAppTop.DefaultDomain
+      Name: "ManagementViewURL"
+  TopViewURL:
+    Value: !Sub "https://prd.${AmplifyAppTop.DefaultDomain}"
     Export:
-      Name: "TopView"
+      Name: "TopViewURL"
       
   RepositoryCloneUrlHttpManagement:
     Value: !GetAtt RepositoryManagement.CloneUrlHttp
