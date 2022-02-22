@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  NAT Gateway Create
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Project Name Prefix"
+        Parameters:
+          - PJPrefix
+      - Label:
+          default: "VPC Configuration"
+        Parameters:
+          - publicSubnetId
+          - routeTableId
+      - Label:
+          default: "MQ Configuration"
+        Parameters:
+          - MQMasterUserName
+          - MQPassword
+
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: "eg-iot"
+
+  publicSubnetId:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select public subnet"
+  routeTableId:
+    Type: String
+    Description : "select private routeTable"
+
+  MQMasterUserName:
+    Type: String
+    Default: "monone"
+#    NoEcho: true
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: "must begin with a letter and contain only alphanumeric characters."
+  MQPassword: 
+    Default: "mqpasswordHoge123"
+    NoEcho: true
+    Type: String
+    MinLength: 12
+    MaxLength: 250
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: "must contain only alphanumeric characters."
+# ------------------------------------------------------------#
+#  NAT Gateway AZ:A
+# ------------------------------------------------------------#
+Resources:
+# NATGatewayA Create
+  NATGatewayA: 
+    Type: "AWS::EC2::NatGateway"
+    Properties: 
+      AllocationId: !GetAtt NATGatewayAEIP.AllocationId 
+      SubnetId: !Sub "${publicSubnetId}"
+      Tags: 
+        - Key: Name
+          Value: !Sub "${PJPrefix}-natgw"
+
+# NATGateway For EIP Create
+  NATGatewayAEIP: 
+    Type: "AWS::EC2::EIP"
+    Properties: 
+      Domain: vpc
+      
+# PrivateRouteA Update
+  PrivateRouteA: 
+    Type: "AWS::EC2::Route"
+    Properties: 
+      RouteTableId: !Sub "${routeTableId}"
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NATGatewayA
+      
+# ------------------------------------------------------------#
+#  MQBroker create
+# ------------------------------------------------------------#
+  AmazonMQBroker:
+      Type: "AWS::AmazonMQ::Broker"
+      Properties:
+          AutoMinorVersionUpgrade: true
+          BrokerName: !Sub "${PJPrefix}-broker"
+          DeploymentMode: "SINGLE_INSTANCE"
+          EngineType: "RabbitMQ"
+          EngineVersion: "3.8.22"
+          HostInstanceType: "mq.t3.micro"
+          PubliclyAccessible: true
+          StorageType: "ebs"
+          AuthenticationStrategy: "simple"
+          MaintenanceWindowStartTime: 
+              DayOfWeek: "MONDAY"
+              TimeOfDay: "07:00"
+              TimeZone: "UTC"
+          Logs: 
+              General: false
+          SubnetIds: 
+            - !Sub "${publicSubnetId}"
+#          EncryptionOptions: 
+#              UseAwsOwnedKey: true
+          Users: 
+            - 
+              ConsoleAccess: "true"
+              Username: !Sub "${MQMasterUserName}"
+              Password: !Sub "${MQPassword}"
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  NATGatewayAEIP:
+    Value: !Ref NATGatewayAEIP
+    Export:
+      Name: !Sub "${PJPrefix}-natgw-eip"
