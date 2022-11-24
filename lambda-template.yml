@@ -1,0 +1,41 @@
+
+# ------------------------------------------------------------#
+# ##########機能
+# ------------------------------------------------------------#
+  %%%%%%%%%%Function:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "##########機能"
+      FunctionName: "@@@@@@@@@@"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/@@@@@@@@@@.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  %%%%%%%%%%Version:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref %%%%%%%%%%Function
+
+  %%%%%%%%%%Alias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref %%%%%%%%%%Function
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          

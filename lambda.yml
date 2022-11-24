@@ -67,7 +67,7 @@ Resources:
       Properties:
           Description: ""
           FunctionName: !Ref LatestOrderFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  LatestOrderVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # データメンテナンス機能
@@ -100,13 +100,13 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref DataMaintenanceFunction
-
+          
   DataMaintenanceAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref DataMaintenanceFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  DataMaintenanceVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # リカバリー機能
@@ -139,13 +139,12 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref RecoveryFunction
-
   RecoveryAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref RecoveryFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  RecoveryVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_データ定義マスタ_削除
@@ -153,7 +152,7 @@ Resources:
   MasterMainteDataCollectionDeleteFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_データ定義マスタ_削除"
+      Description: "マスタメンテナンス機能_データ定義マスタ_削除機能"
       FunctionName: "mastermainte_datacollection_delete"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -178,22 +177,20 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteDataCollectionDeleteFunction
-
   MasterMainteDataCollectionDeleteAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteDataCollectionDeleteFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteDataCollectionDeleteVersion.Version
           Name: "PRD"
-          
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_データ定義マスタ_更新
 # ------------------------------------------------------------#
   MasterMainteDataCollectionUpsertFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_データ定義マスタ_更新"
+      Description: "マスタメンテナンス機能_データ定義マスタ_更新機能"
       FunctionName: "mastermainte_datacollection_upsert"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -218,22 +215,20 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteDataCollectionUpsertFunction
-
   MasterMainteDataCollectionUpsertAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteDataCollectionUpsertFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteDataCollectionUpsertVersion.Version
           Name: "PRD"
-          
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_データ定義マスタ_参照
 # ------------------------------------------------------------#
   MasterMainteDataCollectionGetFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_データ定義マスタ_参照"
+      Description: "マスタメンテナンス機能_データ定義マスタ_参照機能"
       FunctionName: "mastermainte_datacollection_get"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -258,13 +253,12 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteDataCollectionGetFunction
-
   MasterMainteDataCollectionGetAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteDataCollectionGetFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteDataCollectionGetVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_メール通知マスタ_削除
@@ -272,7 +266,7 @@ Resources:
   MasterMainteMailSendDeleteFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_メール通知マスタ_削除"
+      Description: "マスタメンテナンス機能_メール通知マスタ_削除機能"
       FunctionName: "mastermainte_mailsend_delete"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -297,22 +291,20 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteMailSendDeleteFunction
-
   MasterMainteMailSendDeleteAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteMailSendDeleteFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteMailSendDeleteVersion.Version
           Name: "PRD"
-          
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_メール通知マスタ_更新
 # ------------------------------------------------------------#
   MasterMainteMailSendUpsertFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_メール通知マスタ_更新"
+      Description: "マスタメンテナンス機能_メール通知マスタ_更新機能"
       FunctionName: "mastermainte_mailsend_upsert"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -337,22 +329,20 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteMailSendUpsertFunction
-
   MasterMainteMailSendUpsertAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteMailSendUpsertFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteMailSendUpsertVersion.Version
           Name: "PRD"
-          
 # ------------------------------------------------------------#
 # マスタメンテナンス機能_メール通知マスタ_参照
 # ------------------------------------------------------------#
   MasterMainteMailSendGetFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Description: "マスタメンテナンス機能_メール通知マスタ_参照"
+      Description: "マスタメンテナンス機能_メール通知マスタ_参照機能"
       FunctionName: "mastermainte_mailsend_get"
       Handler: lambda_function.lambda_handler
       Role: !GetAtt 
@@ -377,15 +367,13 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MasterMainteMailSendGetFunction
-
   MasterMainteMailSendGetAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MasterMainteMailSendGetFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MasterMainteMailSendGetVersion.Version
           Name: "PRD"
-          
 # ------------------------------------------------------------#
 # 閾値判定機能
 # ------------------------------------------------------------#
@@ -417,13 +405,12 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref LimitJudgeFunction
-
   LimitJudgeAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref LimitJudgeFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  LimitJudgeVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # メール通知機能
@@ -456,13 +443,430 @@ Resources:
       Properties:
           Description: "製品化ver1.0"
           FunctionName: !Ref MailsenderFunction
-
   MailsenderAlias:
       Type: "AWS::Lambda::Alias"
       Properties:
           Description: ""
           FunctionName: !Ref MailsenderFunction
-          FunctionVersion: "$LATEST"
+          FunctionVersion: !GetAtt  MailsenderVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# MQ受信機能
+# ------------------------------------------------------------#
+  AmqpconsumerFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "MQ受信機能"
+      FunctionName: "amqpconsumer"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/amqpconsumer.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  AmqpconsumerVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref AmqpconsumerFunction
+  AmqpconsumerAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref AmqpconsumerFunction
+          FunctionVersion: !GetAtt  AmqpconsumerVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# MQ送信機能
+# ------------------------------------------------------------#
+  AmqpproducerFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "MQ送信機能"
+      FunctionName: "amqpproducer"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/amqpproducer.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  AmqpproducerVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref AmqpproducerFunction
+  AmqpproducerAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref AmqpproducerFunction
+          FunctionVersion: !GetAtt  AmqpproducerVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 設備マスタ参照機能
+# ------------------------------------------------------------#
+  MastermainteEquipmentGetFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "設備マスタ参照機能"
+      FunctionName: "mastermainte_equipment_get"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_equipment_get.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteEquipmentGetVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteEquipmentGetFunction
+  MastermainteEquipmentGetAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteEquipmentGetFunction
+          FunctionVersion: !GetAtt  MastermainteEquipmentGetVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 設備マスタ更新機能
+# ------------------------------------------------------------#
+  MastermainteEquipmentUpsertFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "設備マスタ更新機能"
+      FunctionName: "mastermainte_equipment_upsert"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_equipment_upsert.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteEquipmentUpsertVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteEquipmentUpsertFunction
+  MastermainteEquipmentUpsertAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteEquipmentUpsertFunction
+          FunctionVersion: !GetAtt  MastermainteEquipmentUpsertVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 設備マスタ削除機能
+# ------------------------------------------------------------#
+  MastermainteEquipmentDeleteFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "設備マスタ削除機能"
+      FunctionName: "mastermainte_equipment_delete"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_equipment_delete.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteEquipmentDeleteVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteEquipmentDeleteFunction
+  MastermainteEquipmentDeleteAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteEquipmentDeleteFunction
+          FunctionVersion: !GetAtt  MastermainteEquipmentDeleteVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 収集区分マスタ参照機能
+# ------------------------------------------------------------#
+  MastermainteCollectiontypeGetFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: 収集区分マスタ参照機能
+      FunctionName: "mastermainte_collectiontype_get"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_collectiontype_get.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteCollectiontypeGetVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteCollectiontypeGetFunction
+  MastermainteCollectiontypeGetAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteCollectiontypeGetFunction
+          FunctionVersion: !GetAtt  MastermainteCollectiontypeGetVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# monone処理一連機能
+# ------------------------------------------------------------#
+  MononeCoreFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "monone処理一連機能"
+      FunctionName: "mononeCore"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mononeCore.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MononeCoreVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MononeCoreFunction
+  MononeCoreAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MononeCoreFunction
+          FunctionVersion: !GetAtt  MononeCoreVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# S3バックアップ機能
+# ------------------------------------------------------------#
+  S3backupscoreFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "S3バックアップ機能"
+      FunctionName: "S3backupscore"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/S3backupscore.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  S3backupscoreVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref S3backupscoreFunction
+  S3backupscoreAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref S3backupscoreFunction
+          FunctionVersion: !GetAtt  S3backupscoreVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 音ファイル作成機能
+# ------------------------------------------------------------#
+  SoundCreatorFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "音ファイル作成機能"
+      FunctionName: "sound_Creator"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/sound_Creator.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  SoundCreatorVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref SoundCreatorFunction
+  SoundCreatorAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref SoundCreatorFunction
+          FunctionVersion: !GetAtt  SoundCreatorVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 音ファイルダウンロード機能
+# ------------------------------------------------------------#
+  SoundDownloadFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "音ファイルダウンロード機能"
+      FunctionName: "soundDownload"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/soundDownload.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  SoundDownloadVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref SoundDownloadFunction
+  SoundDownloadAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref SoundDownloadFunction
+          FunctionVersion: !GetAtt SoundDownloadVersion.Version
+          Name: "PRD"
+# ------------------------------------------------------------#
+# 音ファイル一覧参照機能
+# ------------------------------------------------------------#
+  SoundFileHistoryGetFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "音ファイル一覧参照機能"
+      FunctionName: "soundFileHistory_get"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/soundFileHistory_get.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  SoundFileHistoryGetVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref SoundFileHistoryGetFunction
+  SoundFileHistoryGetAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref SoundFileHistoryGetFunction
+          FunctionVersion: !GetAtt  SoundFileHistoryGetVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
 # レイヤー
@@ -524,3 +928,12 @@ Resources:
         - 
           CidrIp: "0.0.0.0/0"
           IpProtocol: "-1"
+
+  LambdaSecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId : !GetAtt LambdaSecurityGroup.GroupId
+      IpProtocol : tcp
+      FromPort :  3306
+      ToPort : 3306
+      SourceSecurityGroupId : !GetAtt LambdaSecurityGroup.GroupId

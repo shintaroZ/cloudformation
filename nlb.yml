@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+    Generator: "former2"
+Description: ""
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: "eg-iot"
+
+  vpcId:
+    Type: 'AWS::EC2::VPC::Id'
+  publicSubnetIdA:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select public subnet-a"
+  publicSubnetIdC:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description : "select public subnet-c"
+
+  ACMArn:
+    Type: String
+    Default: ""
+  MQoruvateIp:
+    Type: String
+    Default: "" 
+# ------------------------------------------------------------#
+# Resources
+# ------------------------------------------------------------# 
+Resources:
+    ElasticLoadBalancingV2LoadBalancer:
+        Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+        Properties:
+            Name: !Sub "${PJPrefix}-nlb"
+            Scheme: "internet-facing"
+            Type: "network"
+            Subnets: 
+              - !Sub "${publicSubnetIdA}"
+              - !Sub "${publicSubnetIdC}"
+            IpAddressType: "ipv4"
+            LoadBalancerAttributes: 
+              - 
+                Key: "access_logs.s3.enabled"
+                Value: "false"
+              - 
+                Key: "deletion_protection.enabled"
+                Value: "false"
+              - 
+                Key: "load_balancing.cross_zone.enabled"
+                Value: "false"
+
+    ElasticLoadBalancingV2Listener:
+        Type: "AWS::ElasticLoadBalancingV2::Listener"
+        Properties:
+            LoadBalancerArn: !Ref ElasticLoadBalancingV2LoadBalancer
+            Port: 5671
+            Protocol: "TLS"
+            SslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            Certificates: 
+              - 
+                CertificateArn: !Sub "${ACMArn}"
+            DefaultActions: 
+              - 
+                TargetGroupArn: !Ref ElasticLoadBalancingV2TargetGroup
+                Type: "forward"
+
+    ElasticLoadBalancingV2Listener2:
+        Type: "AWS::ElasticLoadBalancingV2::Listener"
+        Properties:
+            LoadBalancerArn: !Ref ElasticLoadBalancingV2LoadBalancer
+            Port: 15671
+            Protocol: "TLS"
+            SslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            Certificates: 
+              - 
+                CertificateArn: !Sub "${ACMArn}"
+            DefaultActions: 
+              - 
+                TargetGroupArn: !Ref ElasticLoadBalancingV2TargetGroup2
+                Type: "forward"
+
+    ElasticLoadBalancingV2TargetGroup:
+        Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+        Properties:
+            HealthCheckIntervalSeconds: 30
+            Port: 5671
+            Protocol: "TLS"
+            HealthCheckPort: "443"
+            HealthCheckProtocol: "TCP"
+            HealthCheckTimeoutSeconds: 10
+            UnhealthyThresholdCount: 3
+            TargetType: "ip"
+            HealthyThresholdCount: 3
+            VpcId: !Sub "${vpcId}"
+            Name: !Sub "${PJPrefix}-amqp-group"
+            HealthCheckEnabled: true
+            TargetGroupAttributes: 
+              - 
+                Key: "proxy_protocol_v2.enabled"
+                Value: "false"
+              - 
+                Key: "preserve_client_ip.enabled"
+                Value: "false"
+              - 
+                Key: "stickiness.enabled"
+                Value: "false"
+              - 
+                Key: "deregistration_delay.timeout_seconds"
+                Value: "300"
+              - 
+                Key: "stickiness.type"
+                Value: "source_ip"
+              - 
+                Key: "deregistration_delay.connection_termination.enabled"
+                Value: "false"
+            Targets: 
+              - 
+                Id: !Sub "$MQoruvateIp"
+                Port: 5671
+                AvailabilityZone: !Sub "${AWS::Region}a"
+
+    ElasticLoadBalancingV2TargetGroup2:
+        Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+        Properties:
+            HealthCheckIntervalSeconds: 30
+            Port: 15671
+            Protocol: "TLS"
+            HealthCheckPort: "traffic-port"
+            HealthCheckProtocol: "TCP"
+            HealthCheckTimeoutSeconds: 10
+            UnhealthyThresholdCount: 3
+            TargetType: "ip"
+            HealthyThresholdCount: 3
+            VpcId: !Sub "${vpcId}"
+            Name: !Sub "${PJPrefix}-https-webconsole-group"
+            HealthCheckEnabled: true
+            TargetGroupAttributes: 
+              - 
+                Key: "proxy_protocol_v2.enabled"
+                Value: "false"
+              - 
+                Key: "preserve_client_ip.enabled"
+                Value: "false"
+              - 
+                Key: "stickiness.enabled"
+                Value: "false"
+              - 
+                Key: "deregistration_delay.timeout_seconds"
+                Value: "300"
+              - 
+                Key: "stickiness.type"
+                Value: "source_ip"
+              - 
+                Key: "deregistration_delay.connection_termination.enabled"
+                Value: "false"
+            Targets: 
+              - 
+                Id: !Sub "$MQoruvateIp"
+                Port: 15671
+                AvailabilityZone: !Sub "${AWS::Region}a"
+

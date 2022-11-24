@@ -22,16 +22,6 @@ Metadata:
           - DBMasterUserName
           - DBPassword
           - MultiAZ
-      - Label:
-          default: "VPC Configuration"
-        Parameters:
-          - vpcId
-          - subnetIda
-          - subnetIdc
-      - Label:
-          default: "SecurityGroup Configuration"
-        Parameters:
-          - adminIp
     ParameterLabels:
       DBInstanceName:
         default: "DBInstanceName"
@@ -146,10 +136,10 @@ Parameters:
   subnetIdc:
     Type: 'AWS::EC2::Subnet::Id'
     Description : "select public-subnet-c"
-  adminIp:
+  ec2SecurityGroupId:
     Type: String
-    Default: ""
-    Description : "input admin global Ip (xxx.xxx.xxx.xxx/32)"
+    Default: "sg-"
+    Description : "input eC2SecurityGroupId for ec2 output"
 Resources: 
 # ------------------------------------------------------------#
 #  DBInstance MySQL
@@ -228,8 +218,9 @@ Resources:
           IpProtocol: "tcp"
           ToPort: 3306
         - 
-          CidrIp: !Sub "${adminIp}"
-          Description: "admin"
+          SourceSecurityGroupId: !Sub "${ec2SecurityGroupId}"
+          SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+          Description: "ec2 source"
           FromPort: 3306
           IpProtocol: "tcp"
           ToPort: 3306

@@ -52,6 +52,76 @@ Resources:
           ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
 
 # ------------------------------------------------------------#
+# リソース/edgerestart
+# ------------------------------------------------------------#
+  ApiGatewayResourceEdgerestart:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "edgerestart"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/equipment
+# ------------------------------------------------------------#
+  ApiGatewayResourceEquipment:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "edgerestart"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/soundFileHistory
+# ------------------------------------------------------------#
+  ApiGatewayResourceSoundFileHistory:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "soundFileHistory"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/collectionType
+# ------------------------------------------------------------#
+  ApiGatewayResourceCollectionType:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "collectionType"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/currentSound
+# ------------------------------------------------------------#
+  ApiGatewayResourceCurrentSound:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "currentSound"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/soundDownload
+# ------------------------------------------------------------#
+  ApiGatewayResourceSoundDownload:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "soundDownload"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
+# リソース/replaceSetting
+# ------------------------------------------------------------#
+  ApiGatewayResourceReplaceSetting:
+      Type: "AWS::ApiGateway::Resource"
+      Properties:
+          RestApiId: !Ref ApiGatewayRestApi
+          PathPart: "replaceSetting"
+          ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+          
+# ------------------------------------------------------------#
 # リクエスト入力チェック
 # ------------------------------------------------------------#
   RequestValidator:
@@ -96,7 +166,7 @@ Resources:
                   "method.response.header.Access-Control-Allow-Origin": false
               StatusCode: "500"
           Integration: 
-              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              CacheNamespace: !Ref ApiGatewayResourceDataCollection
               ContentHandling: "CONVERT_TO_TEXT"
               Credentials: !GetAtt 
                 - IAMRoleForApiGateway
@@ -169,7 +239,7 @@ Resources:
                   "method.response.header.Content-Type": false
               StatusCode: "500"
           Integration: 
-              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              CacheNamespace: !Ref ApiGatewayResourceDataCollection
               ContentHandling: "CONVERT_TO_TEXT"
               Credentials: !GetAtt 
                 - IAMRoleForApiGateway
@@ -245,7 +315,7 @@ Resources:
                   "method.response.header.Access-Control-Allow-Origin": false
               StatusCode: "204"
           Integration: 
-              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              CacheNamespace: !Ref ApiGatewayResourceDataCollection
               IntegrationResponses: 
                 - 
                   ResponseParameters: 
@@ -296,7 +366,7 @@ Resources:
                   "method.response.header.Content-Type": false
               StatusCode: "500"
           Integration: 
-              CacheNamespace: !Ref ApiGatewayResourceMailSend
+              CacheNamespace: !Ref ApiGatewayResourceDataCollection
               ContentHandling: "CONVERT_TO_TEXT"
               Credentials: !GetAtt 
                 - IAMRoleForApiGateway
@@ -311,7 +381,7 @@ Resources:
                 - 
                   ResponseParameters: 
                       "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
-                  SelectionPattern: "Missing required request parameters.*|The parameters is.*"
+                  SelectionPattern: "Missing required request parameters.*|The parameters is.*|EncodeError."
                   StatusCode: "400"
                 - 
                   ResponseParameters: 
@@ -555,7 +625,7 @@ Resources:
                 - 
                   ResponseParameters: 
                       "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
-                  SelectionPattern: "Missing required request parameters.*"
+                  SelectionPattern: "Missing required request parameters.*|The parameters is.*|EncodeError."
                   StatusCode: "400"
                 - 
                   ResponseParameters: 
@@ -579,7 +649,106 @@ Resources:
               TimeoutInMillis: 29000
               Type: "AWS"
               Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_mailsend_upsert:PRD/invocations"
-       
+
+# ------------------------------------------------------------#
+# メソッド:collectionType/get
+# ------------------------------------------------------------#
+  ApiGatewayMethodCollectionTypeGet:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceCollectionType
+      HttpMethod: "GET"
+      AuthorizationType: "COGNITO_USER_POOLS"
+      AuthorizerId: !Ref ApiGatewayAuthorizer
+      ApiKeyRequired: false
+      RequestValidatorId: !Ref RequestValidator
+      RequestParameters:
+        "method.request.header.idToken": true
+        "method.request.querystring.clientName": true
+      MethodResponses:
+        - ResponseModels:
+            "application/json": "Empty"
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin": false
+            "method.response.header.Content-Type": false
+          StatusCode: "200"
+        - ResponseModels:
+            "application/json": "Error"
+          ResponseParameters:
+            "method.response.header.Content-Type": false
+          StatusCode: "500"
+      Integration:
+        CacheNamespace: !Ref ApiGatewayResourceCollectionType
+        ContentHandling: "CONVERT_TO_TEXT"
+        Credentials: !GetAtt
+          - IAMRoleForApiGateway
+          - Arn
+        IntegrationHttpMethod: "POST"
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+              "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+            ResponseTemplates: {}
+            StatusCode: "200"
+          - ResponseParameters:
+              "method.response.header.Content-Type": "'application/json;charset=UTF-8'"
+            ResponseTemplates:
+              "application/json": |
+                {
+                    "message" : $input.path('$.errorMessage')
+                }
+            SelectionPattern: "\\([0-9].*|must be real number.*|.*Task timed out after.*|An error occurred.*|Authentication Error.*"
+            StatusCode: "500"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestParameters:
+          "integration.request.header.idToken": "method.request.header.idToken"
+          "integration.request.path.clientName": "method.request.querystring.clientName"
+        RequestTemplates:
+          "application/json": |
+            {
+                "clientName" : "$input.params('clientName')"
+                ,"idToken" : "$input.params('idToken')"
+            }
+        TimeoutInMillis: 29000
+        Type: "AWS"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mastermainte_collectiontype_get:PRD/invocations"
+
+# ------------------------------------------------------------#
+# メソッド:collectionType/options
+# ------------------------------------------------------------#
+  ApiGatewayMethodCollectionTypeOptions:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceCollectionType
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      ApiKeyRequired: false
+      RequestParameters: {}
+      MethodResponses:
+        - ResponseModels:
+            "application/json": "Empty"
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Headers": false
+            "method.response.header.Access-Control-Allow-Methods": false
+            "method.response.header.Access-Control-Allow-Origin": false
+          StatusCode: "200"
+      Integration:
+        CacheNamespace: !Ref ApiGatewayResourceCollectionType
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,idToken'"
+              "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            ResponseTemplates: {}
+            StatusCode: "200"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        TimeoutInMillis: 29000
+        Type: "MOCK"
+
 # ------------------------------------------------------------#
 # Cognito認証
 # ------------------------------------------------------------#

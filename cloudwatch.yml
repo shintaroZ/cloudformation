@@ -5,10 +5,6 @@ Metadata:
   "AWS::CloudFormation::Interface":
     ParameterGroups:
       - Label:
-          default: "EC2 Resources"
-        Parameters:
-          - EC2InstanceId
-      - Label:
           default: "RDS Resources"
         Parameters:
           - DBInstanceID
@@ -16,7 +12,6 @@ Metadata:
           default: "S3 Resources"
         Parameters:
           - s3BucketName
-          
       - Label:
           default: "IotCore Resources"
         Parameters:
@@ -26,9 +21,6 @@ Metadata:
 # Input Parameters
 # ------------------------------------------------------------# 
 Parameters:
-  EC2InstanceId:
-    Type: "AWS::EC2::Instance::Id"
-
   DBInstanceID:
     Type: "String"
     Description : "input Rds InstansId"
@@ -42,30 +34,6 @@ Parameters:
     Type: "String"
     Description : "input IotCore Rule Name"
 Resources:
-# ------------------------------------------------------------#
-# CloudWatchAlarm for EC2
-# ------------------------------------------------------------#
-  CloudWatchAlarmEC2:
-      Type: "AWS::CloudWatch::Alarm"
-      Properties:
-          AlarmName: !Sub "alarm-ec2-${EC2InstanceId}-isStatusCheckFailed"
-          AlarmDescription: "EC2インスタンスのステータスを監視"
-          ActionsEnabled: true
-          AlarmActions: [ !ImportValue SNSTopicARN ]
-          MetricName: "StatusCheckFailed_System"
-          Namespace: "AWS/EC2"
-          Statistic: "Average"
-          Dimensions: 
-            - 
-              Name: "InstanceId"
-              Value: !Ref EC2InstanceId
-          Period: 300
-          EvaluationPeriods: 1
-          DatapointsToAlarm: 1
-          Threshold: 1
-          ComparisonOperator: "GreaterThanOrEqualToThreshold"
-          TreatMissingData: "missing"
-
 # ------------------------------------------------------------#
 # CloudWatchAlarm for Lambda
 # ------------------------------------------------------------#
@@ -357,6 +325,7 @@ Resources:
           ComparisonOperator: "GreaterThanOrEqualToThreshold"
           TreatMissingData: "notBreaching"
 
+  # ★デバイスゲートウェイの数が増えたら更新
   CloudWatchAlarmIot2:
       Type: "AWS::CloudWatch::Alarm"
       Properties:

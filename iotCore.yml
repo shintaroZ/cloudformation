@@ -51,7 +51,7 @@ Resources:
                       "iot:Receive"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/mqtt/${clientNamePrefix}/latest"
+                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${clientNamePrefix}/mqtt/latest"
                     ]
                   },
                   {
@@ -60,7 +60,7 @@ Resources:
                       "iot:Subscribe"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/mqtt/${clientNamePrefix}/latest"
+                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${clientNamePrefix}/mqtt/latest"
                     ]
                   },
                   {
@@ -86,7 +86,7 @@ Resources:
       TopicRulePayload:
         AwsIotSqlVersion : "2016-03-23"
         RuleDisabled: false
-        Sql: !Sub "SELECT '${s3BucketName}' as clientName , * as receivedMessages FROM 'mqtt/${clientNamePrefix}/latest'"
+        Sql: !Sub "SELECT '${s3BucketName}' as clientName , * as receivedMessages FROM '${clientNamePrefix}/mqtt/latest'"
         Actions:
           - StepFunctions:
               ExecutionNamePrefix : !Sub "${clientNamePrefix}"
@@ -129,6 +129,6 @@ Outputs:
     Export:
       Name: "iotCoreRuleName"
   iotCoreTopicName:
-    Value: !Sub "mqtt/${clientNamePrefix}/latest"
+    Value: !Sub "${clientNamePrefix}/mqtt/latest"
     Export:
       Name: "iotCoreTopicName"

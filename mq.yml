@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  NAT Gateway Create
-
+  Rabbit MQ Create
+  
 Metadata:
   "AWS::CloudFormation::Interface":
     ParameterGroups:
@@ -12,8 +12,7 @@ Metadata:
       - Label:
           default: "VPC Configuration"
         Parameters:
-          - publicSubnetId
-          - routeTableId
+          - privateSubnetId
       - Label:
           default: "MQ Configuration"
         Parameters:
@@ -29,13 +28,19 @@ Parameters:
     Type: String
     Default: "eg-iot"
 
-  publicSubnetId:
+  vpcId:
+    Type: 'AWS::EC2::VPC::Id'
+  privateSubnetId:
     Type: 'AWS::EC2::Subnet::Id'
-    Description : "select public subnet"
-  routeTableId:
+    Description : "select private subnet"
+    
+  MQVersion:
     Type: String
-    Description : "select private routeTable"
-
+    Default: "3.9.13"
+  MQInstanceType:
+    Type: String
+    Default: "mq.t3.micro"
+    
   MQMasterUserName:
     Type: String
     Default: "monone"
@@ -52,34 +57,8 @@ Parameters:
     MaxLength: 250
     AllowedPattern: "[a-zA-Z0-9]*"
     ConstraintDescription: "must contain only alphanumeric characters."
-# ------------------------------------------------------------#
-#  NAT Gateway AZ:A
-# ------------------------------------------------------------#
+    
 Resources:
-# NATGatewayA Create
-  NATGatewayA: 
-    Type: "AWS::EC2::NatGateway"
-    Properties: 
-      AllocationId: !GetAtt NATGatewayAEIP.AllocationId 
-      SubnetId: !Sub "${publicSubnetId}"
-      Tags: 
-        - Key: Name
-          Value: !Sub "${PJPrefix}-natgw"
-
-# NATGateway For EIP Create
-  NATGatewayAEIP: 
-    Type: "AWS::EC2::EIP"
-    Properties: 
-      Domain: vpc
-      
-# PrivateRouteA Update
-  PrivateRouteA: 
-    Type: "AWS::EC2::Route"
-    Properties: 
-      RouteTableId: !Sub "${routeTableId}"
-      DestinationCidrBlock: "0.0.0.0/0"
-      NatGatewayId: !Ref NATGatewayA
-      
 # ------------------------------------------------------------#
 #  MQBroker create
 # ------------------------------------------------------------#
@@ -87,12 +66,12 @@ Resources:
       Type: "AWS::AmazonMQ::Broker"
       Properties:
           AutoMinorVersionUpgrade: true
-          BrokerName: !Sub "${PJPrefix}-broker"
+          BrokerName: !Sub "${PJPrefix}-rabbitMQ-broker"
           DeploymentMode: "SINGLE_INSTANCE"
           EngineType: "RabbitMQ"
-          EngineVersion: "3.8.22"
-          HostInstanceType: "mq.t3.micro"
-          PubliclyAccessible: true
+          EngineVersion: !Sub "${MQVersion}"
+          HostInstanceType: !Sub "${MQInstanceType}"
+          PubliclyAccessible: false
           StorageType: "ebs"
           AuthenticationStrategy: "simple"
           MaintenanceWindowStartTime: 
@@ -101,8 +80,10 @@ Resources:
               TimeZone: "UTC"
           Logs: 
               General: false
+          SecurityGroups:
+            - !Ref MQSecurityGroup
           SubnetIds: 
-            - !Sub "${publicSubnetId}"
+            - !Sub "${privateSubnetId}"
 #          EncryptionOptions: 
 #              UseAwsOwnedKey: true
           Users: 
@@ -110,11 +91,43 @@ Resources:
               ConsoleAccess: "true"
               Username: !Sub "${MQMasterUserName}"
               Password: !Sub "${MQPassword}"
+              
+# ------------------------------------------------------------#
+#  SecurityGroup for MQ
+# ------------------------------------------------------------#
+  MQSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId:  !Sub "${vpcId}"
+      GroupName: !Sub "${PJPrefix}-mq-sg"
+      GroupDescription: "-"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${PJPrefix}-mq-sg"
+# Rule
+      SecurityGroupIngress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          Description: "AMQP"
+          FromPort: 5671
+          IpProtocol: "tcp"
+          ToPort: 5671
+        - 
+          CidrIp: "0.0.0.0/0"
+          Description: "Web Console"
+          FromPort: 443
+          IpProtocol: "tcp"
+          ToPort: 443
+      SecurityGroupEgress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
 # ------------------------------------------------------------#
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  NATGatewayAEIP:
-    Value: !Ref NATGatewayAEIP
+  AmazonMQBrokerResult:
+    Value: !Ref AmazonMQBroker
     Export:
-      Name: !Sub "${PJPrefix}-natgw-eip"
+      Name: !Sub "${PJPrefix}-AmazonMQBroker"
