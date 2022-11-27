@@ -29,51 +29,7 @@ Resources:
           LoggingConfiguration: 
               IncludeExecutionData: false
               Level: "OFF"
-# ------------------------------------------------------------#
-# 公開DB作成機能→閾値判定機能→メール送信機能
-# ------------------------------------------------------------#
-  StepFunctionsStateMachine2:
-      Type: "AWS::StepFunctions::StateMachine"
-      Properties:
-          StateMachineName: "latest_jobnet"
-          DefinitionString: !Sub |
-              {
-                "Comment": "Parallel Example.",
-                "StartAt": "latestorder",
-                "States": {
-                  "latestorder": {
-                    "Comment": "公開DB作成機能",
-                    "Type": "Task",
-                    "InputPath": "$",
-                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:latest_order:PRD",
-                    "ResultPath": "$",
-                    "Next": "limitJudge"
-                  },
-                  "limitJudge": {
-                    "Comment": "閾値判定機能",
-                    "Type": "Task",
-                    "InputPath": "$",
-                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:limitJudge:PRD",
-                    "ResultPath": "$",
-                    "Next": "mailSender"
-                  },
-                  "mailSender": {
-                    "Comment": "メール通知機能",
-                    "Type": "Task",
-                    "InputPath": "$",
-                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:mailsender:PRD",
-                    "ResultPath": "$",
-                    "End": true
-                  }
-                }
-              }
-          RoleArn: !GetAtt 
-          - IAMRoleForStepFunctions
-          - Arn
-          StateMachineType: "STANDARD"
-          LoggingConfiguration: 
-              IncludeExecutionData: false
-              Level: "OFF"
+
 # ------------------------------------------------------------#
 # StepFunctionsRole create
 # ------------------------------------------------------------#
@@ -101,12 +57,12 @@ Resources:
 # Output Parameters
 # ------------------------------------------------------------#
 Outputs:
-  LatestStepFunctionName:
-    Value: !GetAtt StepFunctionsStateMachine2.Name
+  ReceveryStepFunctionName:
+    Value: !GetAtt StepFunctionsStateMachine.Name
     Export:
       Name: !Sub "LatestStepFunctionName"
       
-  LatestStepFunctionARN:
-    Value: !GetAtt StepFunctionsStateMachine2.Arn
+  ReceveryStepFunctionARN:
+    Value: !GetAtt StepFunctionsStateMachine.Arn
     Export:
       Name: !Sub "LatestStepFunctionARN"

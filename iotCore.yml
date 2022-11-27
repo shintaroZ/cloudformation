@@ -8,7 +8,9 @@ Metadata:
           default: "IotCore Configuration"
         Parameters:
           - clientNamePrefix
-          - deviceId
+          - DgwDeviceId
+          - DxpDeviceId
+          - ModelId
       - Label:
           default: "S3 Configuration"
         Parameters:
@@ -22,10 +24,20 @@ Parameters:
     Default: "budonoki"
     Description : "input clientName"
     
-  deviceId:
+  DgwDeviceId:
     Type: String
     Default: "*"
-    Description : "input deviceId. default is *"
+    Description : "input DgwDeviceId. default is *"
+    
+  DxpDeviceId:
+    Type: String
+    Default: "*"
+    Description : "input DxpDeviceId. default is *"
+    
+  ModelId:
+    Type: String
+    Default: "*"
+    Description : "input ModelId. default is *"
     
   s3BucketName:
     Type: String
@@ -39,8 +51,8 @@ Resources:
   IoTPolicy:
       Type: "AWS::IoT::Policy"
       Properties:
-          PolicyName: !Sub "${clientNamePrefix}-policy"
-          PolicyDocument: !Sub |
+          PolicyName: !Sub "${clientNamePrefix}-Dgw-Policy"
+          PolicyDocument: 
               {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -51,7 +63,7 @@ Resources:
                       "iot:Receive"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${clientNamePrefix}/mqtt/latest"
+                      "Fn::Sub" : "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${clientNamePrefix}/mqtt/latest"
                     ]
                   },
                   {
@@ -60,7 +72,7 @@ Resources:
                       "iot:Subscribe"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${clientNamePrefix}/mqtt/latest"
+                      "Fn::Sub" : "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${clientNamePrefix}/mqtt/latest"
                     ]
                   },
                   {
@@ -69,7 +81,7 @@ Resources:
                       "iot:Connect"
                     ],
                     "Resource": [
-                      "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${deviceId}"
+                      "Fn::Sub" : "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${DgwDeviceId}"
                     ]
                   }
                 ]
@@ -79,23 +91,37 @@ Resources:
 # ------------------------------------------------------------#
 # IoTRule create
 # ------------------------------------------------------------# 
-  EdgeRecvMessageTopicRule:
+  DgwTopicRule:
     Type: AWS::IoT::TopicRule
     Properties:
-      RuleName : !Sub "${clientNamePrefix}_latest"
+      RuleName : !Sub "${clientNamePrefix}_Dgw_Latest"
       TopicRulePayload:
         AwsIotSqlVersion : "2016-03-23"
         RuleDisabled: false
         Sql: !Sub "SELECT '${s3BucketName}' as clientName , * as receivedMessages FROM '${clientNamePrefix}/mqtt/latest'"
         Actions:
-          - StepFunctions:
-              ExecutionNamePrefix : !Sub "${clientNamePrefix}"
-              RoleArn: !GetAtt IAMRoleForIotCore.Arn
-              StateMachineName: !ImportValue LatestStepFunctionName
+          - Lambda:
+              FunctionArn : !ImportValue DgwCoreFunctionArn
           - S3:
               BucketName: !Sub "${s3BucketName}"
               RoleArn: !GetAtt IAMRoleForIotCore.Arn
-              Key: "bkstrage/mqtt/${parse_time(\"yyyyMMdd\", timestamp(), \"Asia/Tokyo\" )}/${requestTimeStamp}_${deviceId}.json"
+              Key: "bkstrage/mqtt/${parse_time(\"yyyyMMdd\", timestamp(), \"Asia/Tokyo\" )}/${requestTimeStamp}_${DgwDeviceId}.json"
+
+  OpcTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName : !Sub "${clientNamePrefix}_Opc_Latest"
+      TopicRulePayload:
+        AwsIotSqlVersion : "2016-03-23"
+        RuleDisabled: false
+        Sql: !Sub "SELECT '${s3BucketName}' as clientName , [ * ] as receivedMessages, parse_time('yyyy-MM-dd HH:mm:ss', timestamp(), 'Asia/Tokyo') as requestTimeStamp FROM '$aws/sitewise/asset-models/${ModelId}/assets/${DxpDeviceId}/properties/+'"
+        Actions:
+          - Lambda:
+              FunctionArn : !ImportValue OpcuaCoreFunctionArn
+          - S3:
+              BucketName: !Sub "${s3BucketName}"
+              RoleArn: !GetAtt IAMRoleForIotCore.Arn
+              Key: "bkstrage/opc-ua/${parse_time(\"yyyyMMdd\", timestamp(), \"Asia/Tokyo\" )}/${parse_time(\"yyyy-MM-dd HH:mm:ss.SSS\", timestamp(), \"Asia/Tokyo\" )}_${get(payload, \"assetId\")}_${get(payload, \"propertyId\")}.json"
 
 # ------------------------------------------------------------#
 # IotCore Role create
@@ -125,7 +151,7 @@ Resources:
 # ------------------------------------------------------------#
 Outputs:
   iotCoreRuleName:
-    Value: !Ref EdgeRecvMessageTopicRule
+    Value: !Ref DgwTopicRule
     Export:
       Name: "iotCoreRuleName"
   iotCoreTopicName:

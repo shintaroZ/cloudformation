@@ -126,12 +126,6 @@ Resources:
       Timeout: 900
       MemorySize: 128
       Runtime: python3.8
-      VpcConfig: 
-        SubnetIds: 
-          - !Sub "${subnetIda}"
-          - !Sub "${subnetIdc}"
-        SecurityGroupIds: 
-          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   RecoveryVersion:
@@ -693,15 +687,15 @@ Resources:
       Code:
         S3Bucket : !Sub "${S3BucketName}"
         S3Key : "resouces/mononeCore.zip"
-      Timeout: 30
+      Timeout: 60
       MemorySize: 128
       Runtime: python3.8
-      VpcConfig: 
-        SubnetIds: 
-          - !Sub "${subnetIda}"
-          - !Sub "${subnetIdc}"
-        SecurityGroupIds: 
-          - !Ref LambdaSecurityGroup
+#      VpcConfig: 
+#        SubnetIds: 
+#          - !Sub "${subnetIda}"
+#          - !Sub "${subnetIdc}"
+#        SecurityGroupIds: 
+#          - !Ref LambdaSecurityGroup
       Layers:
         - !Ref LambdaLayer
   MononeCoreVersion:
@@ -869,6 +863,234 @@ Resources:
           FunctionVersion: !GetAtt  SoundFileHistoryGetVersion.Version
           Name: "PRD"
 # ------------------------------------------------------------#
+# マスタメンテナンス_階層定義マスタ_参照機能
+# ------------------------------------------------------------#
+  MastermainteHierarchyGetFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "マスタメンテナンス_階層定義マスタ_参照機能"
+      FunctionName: "mastermainte_hierarchy_get"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_hierarchy_get.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteHierarchyGetVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteHierarchyGetFunction
+
+  MastermainteHierarchyGetAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteHierarchyGetFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# マスタメンテナンス_階層定義マスタ_追加機能
+# ------------------------------------------------------------#
+  MastermainteHierarchyUpdateFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "マスタメンテナンス_階層定義マスタ_追加機能"
+      FunctionName: "mastermainte_hierarchy_update"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_hierarchy_update.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteHierarchyUpdateVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteHierarchyUpdateFunction
+
+  MastermainteHierarchyUpdateAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteHierarchyUpdateFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# マスタメンテナンス_階層定義マスタ_削除機能
+# ------------------------------------------------------------#
+  MastermainteHierarchyDeleteFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "マスタメンテナンス_階層定義マスタ_削除機能"
+      FunctionName: "mastermainte_hierarchy_delete"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/mastermainte_hierarchy_delete.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  MastermainteHierarchyDeleteVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref MastermainteHierarchyDeleteFunction
+
+  MastermainteHierarchyDeleteAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref MastermainteHierarchyDeleteFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# OPC-UAの電文をDGW用に変換する機能
+# ------------------------------------------------------------#
+  OpcuaFormatConverterFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "OPC-UAの電文をDGW用に変換する機能"
+      FunctionName: "opcuaFormatConverter"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/opcuaFormatConverter.zip"
+      Timeout: 30
+      MemorySize: 128
+      Runtime: python3.8
+      VpcConfig: 
+        SubnetIds: 
+          - !Sub "${subnetIda}"
+          - !Sub "${subnetIdc}"
+        SecurityGroupIds: 
+          - !Ref LambdaSecurityGroup
+      Layers:
+        - !Ref LambdaLayer
+  OpcuaFormatConverterVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref OpcuaFormatConverterFunction
+
+  OpcuaFormatConverterAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref OpcuaFormatConverterFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# DGWからのデータ取込み処理一式
+# ------------------------------------------------------------#
+  DgwCoreFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "DGWからのデータ取込み処理一式"
+      FunctionName: "dgwCore"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/dgwCore.zip"
+      Timeout: 60
+      MemorySize: 128
+      Runtime: python3.8
+      Layers:
+        - !Ref LambdaLayer
+  DgwCoreVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref DgwCoreFunction
+
+  DgwCoreAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref DgwCoreFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
+# OPC-UAからのデータ取込み処理一式
+# ------------------------------------------------------------#
+  OpcuaCoreFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: "OPC-UAからのデータ取込み処理一式"
+      FunctionName: "opcCore"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 
+        - IAMRoleForLambda
+        - Arn
+      Code:
+        S3Bucket : !Sub "${S3BucketName}"
+        S3Key : "resouces/opcCore.zip"
+      Timeout: 60
+      MemorySize: 128
+      Runtime: python3.8
+      Layers:
+        - !Ref LambdaLayer
+  OpcuaCoreVersion:
+      Type: "AWS::Lambda::Version"
+      Properties:
+          Description: "製品化ver1.0"
+          FunctionName: !Ref OpcuaCoreFunction
+
+  OpcuaCoreAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+          Description: ""
+          FunctionName: !Ref OpcuaCoreFunction
+          FunctionVersion: "$LATEST"
+          Name: "PRD"
+          
+# ------------------------------------------------------------#
 # レイヤー
 # ------------------------------------------------------------#
   LambdaLayer:
@@ -937,3 +1159,19 @@ Resources:
       FromPort :  3306
       ToPort : 3306
       SourceSecurityGroupId : !GetAtt LambdaSecurityGroup.GroupId
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  MononeCoreFunctionArn:
+    Value: !GetAtt MononeCoreFunction.Arn
+    Export:
+      Name: "MononeCoreFunctionArn"
+  DgwCoreFunctionArn:
+    Value: !GetAtt DgwCoreFunction.Arn
+    Export:
+      Name: "DgwCoreFunctionArn"
+  OpcuaCoreFunctionArn:
+    Value: !GetAtt OpcuaCoreFunction.Arn
+    Export:
+      Name: "OpcuaCoreFunctionArn"

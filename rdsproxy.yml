@@ -116,3 +116,11 @@ Resources:
             Condition:
               StringEquals:
                 kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  RdsProxyEndpoint:
+    Value: !GetAtt RDSDBProxy.Endpoint
+    Export:
+      Name: !Sub "${DBInstanceId}-rdsproxy-endpoint"
